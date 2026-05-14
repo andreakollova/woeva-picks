@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
 
 async function fetchOgImage(url: string): Promise<string | null> {
   try {
@@ -34,28 +28,41 @@ export async function POST(req: NextRequest) {
 
   const photoUrl = await fetchOgImage(igUrl);
 
-  const { error } = await supabase.from('scraped_events').insert({
-    source_url: igUrl,
-    source: 'instagram',
-    title: title.trim(),
-    description: '',
-    tag: 'zaujimave',
-    date: date || null,
-    time_start: time || null,
-    venue: venue || null,
-    city: city || 'Bratislava',
-    country: 'SK',
-    photo_url: photoUrl,
-    price: 'Zadarmo',
-    scraped_at: new Date().toISOString(),
-    discord_sent: false,
-    approved: false,
-    rejected: false,
-  });
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/scraped_events`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_KEY!,
+        'Authorization': `Bearer ${process.env.SUPABASE_KEY!}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        source_url: igUrl,
+        source: 'instagram',
+        title: title.trim(),
+        description: '',
+        tag: 'zaujimave',
+        date: date || null,
+        time_start: time || null,
+        venue: venue || null,
+        city: city || 'Bratislava',
+        country: 'SK',
+        photo_url: photoUrl,
+        price: 'Zadarmo',
+        scraped_at: new Date().toISOString(),
+        discord_sent: false,
+        approved: false,
+        rejected: false,
+      }),
+    }
+  );
 
-  if (error) {
-    console.error('Supabase insert error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('Supabase insert error:', text);
+    return NextResponse.json({ error: text }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

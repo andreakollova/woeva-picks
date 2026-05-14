@@ -41,7 +41,7 @@ DESCRIPTION LANGUAGE RULES:
 ORGANIZER: Look for the real-world name of who is organizing or hosting the event — this is typically a bar, club, restaurant, company, or organization name visible in the image or caption (e.g. "Meraki Bar", "Tabačka Kulturfabrik", "Nu Spirit Club"). Do NOT use the Instagram/Facebook account handle or username. If unsure, use the venue name.
 
 Return a JSON object:
-- "title": event name only, no venue prefix (string, max 120 chars)
+- "title": the event name only — do NOT include venue name, city name, or location in this field (string, max 120 chars)
 - "organizer": name of the organizer/venue/account, or ""
 - "description": fun description in the correct language, 20-29 words exactly, start with one emoji, do NOT mention the organizer here
 - "date": event date as YYYY-MM-DD, or ""

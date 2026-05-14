@@ -43,7 +43,7 @@ ORGANIZER: Look for the Instagram/Facebook account name, page name, venue name, 
 Return a JSON object:
 - "title": event name only, no venue prefix (string, max 120 chars)
 - "organizer": name of the organizer/venue/account, or ""
-- "description": short fun description in the correct language, MAX 25 WORDS, start with one emoji, do NOT mention the organizer here
+- "description": fun description in the correct language, aim for 25-40 words, start with one emoji, do NOT mention the organizer here
 - "date": event date as YYYY-MM-DD, or ""
 - "time": event start time as HH:MM (24h), or ""
 - "venue": venue or location name, or ""

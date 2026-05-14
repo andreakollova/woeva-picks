@@ -36,7 +36,7 @@ export default function Home() {
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('');
   const [city, setCity] = useState('Bratislava');
-  const [tag, setTag] = useState('zaujimave');
+  const [tags, setTags] = useState<string[]>(['zaujimave']);
 
   const [enriching, setEnriching] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,7 @@ export default function Home() {
     setTime('');
     setVenue('');
     setCity('Bratislava');
-    setTag('zaujimave');
+    setTags(['zaujimave']);
     setEnriching(true);
     try {
       const fd = new FormData();
@@ -70,7 +70,7 @@ export default function Home() {
       if (data.time) setTime(data.time);
       if (data.venue) setVenue(data.venue);
       if (data.city) setCity(data.city);
-      if (data.tag) setTag(data.tag);
+      if (data.tag) setTags([data.tag]);
     } catch {
       // silent
     } finally {
@@ -133,7 +133,7 @@ export default function Home() {
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, igUrl, title, description, date, time, venue, city, tag, imageUrl }),
+      body: JSON.stringify({ password, igUrl, title, description, date, time, venue, city, tag: tags.join(','), imageUrl }),
     });
 
     const data = await res.json();
@@ -157,7 +157,7 @@ export default function Home() {
       setTime('');
       setVenue('');
       setCity('Bratislava');
-      setTag('zaujimave');
+      setTags(['zaujimave']);
       if (screenshotImageRef.current) screenshotImageRef.current.value = '';
       if (screenshotPopisRef.current) screenshotPopisRef.current.value = '';
       if (coverRef.current) coverRef.current.value = '';
@@ -279,16 +279,42 @@ export default function Home() {
           <input type="text" placeholder="Miesto / venue" value={venue}
             onChange={e => setVenue(e.target.value)} className={inputClass} />
 
-          <div className="flex gap-2.5">
-            <select value={city} onChange={e => setCity(e.target.value)}
-              className="flex-1 bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
-              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={tag} onChange={e => setTag(e.target.value)}
-              className="flex-1 bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
-              {TAGS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+          <select value={city} onChange={e => setCity(e.target.value)}
+            className="w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
+            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+
+          {/* Tags — max 3, chip multiselect */}
+          <div className="flex flex-wrap gap-2">
+            {TAGS.map(t => {
+              const selected = tags.includes(t.value);
+              const disabled = !selected && tags.length >= 3;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (selected) {
+                      setTags(tags.filter(x => x !== t.value));
+                    } else if (tags.length < 3) {
+                      setTags([...tags, t.value]);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+                    selected
+                      ? 'bg-[#C8FF00] text-black border-[#C8FF00]'
+                      : disabled
+                      ? 'bg-transparent text-[#333] border-[#222] cursor-not-allowed'
+                      : 'bg-transparent text-[#666] border-[#2a2a2a] hover:border-[#555] hover:text-[#aaa]'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
+          <p className="text-[#444] text-xs px-1">Max 3 tagy — GPT vyberie prvý automaticky</p>
 
           <input type="url" placeholder="Instagram / Facebook link (voliteľné)" value={igUrl}
             onChange={e => setIgUrl(e.target.value)}

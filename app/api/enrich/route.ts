@@ -4,7 +4,11 @@ const VALID_TAGS = ['coffee','party','zapasy','sport','umenie','gaming','confere
 
 async function fetchPageMeta(url: string): Promise<{ title: string; description: string; imageUrl: string | null }> {
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WoevaPicksBot/1.0)' },
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'sk-SK,sk;q=0.9,en;q=0.8',
+    },
     signal: AbortSignal.timeout(8000),
   });
   const html = await res.text();
@@ -36,19 +40,29 @@ export async function GET(req: NextRequest) {
     // continue with empty meta
   }
 
-  const prompt = `You are extracting event details from a social media post.
+  const today = new Date().toISOString().slice(0, 10);
+  const prompt = `You are extracting event details from a social media post or event page.
+Today's date: ${today}
 
 Source URL: ${url}
 Page title: ${meta.title || '(none)'}
 Page description / caption: ${meta.description || '(none)'}
 
-Extract and return a JSON object with these fields:
+Instructions:
+- Extract event details from whatever information is available (URL, title, description/caption).
+- The caption may contain dates/times in Slovak, Czech, German or English — parse them carefully.
+  Examples: "5. júna", "piatok 20:00", "6.6.2025", "Freitag 21 Uhr", "Friday June 6"
+- If a date is mentioned relative to today (e.g. "tento piatok", "this Friday"), calculate the actual date.
+- If the URL contains a recognisable event platform slug with a date, use it.
+- Leave "date" and "time" as "" only if there is truly no hint anywhere.
+
+Return a JSON object:
 - "title": event name (string, max 120 chars)
 - "description": short fun description in the language of the city, max 25 words, start with one emoji
-- "date": event date as YYYY-MM-DD, or "" if unknown
-- "time": event start time as HH:MM, or "" if unknown
+- "date": event date as YYYY-MM-DD, or ""
+- "time": event start time as HH:MM (24h), or ""
 - "venue": venue or location name, or ""
-- "city": city name (e.g. Bratislava, Košice, Vienna, Prague, London), or "Bratislava"
+- "city": city name (e.g. Bratislava, Košice, Nitra, Vienna, Prague, London), or "Bratislava"
 - "tag": one of exactly: coffee, party, zapasy, sport, umenie, gaming, conference, priroda, historia, zaujimave
 
 Return ONLY valid JSON, no explanation.`;

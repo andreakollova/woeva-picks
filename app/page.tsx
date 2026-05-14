@@ -3,19 +3,44 @@
 import { useState } from 'react';
 
 const CITIES = ['Bratislava', 'Košice', 'Nitra', 'Vienna', 'Prague', 'London'];
+const TAGS = [
+  { value: 'zaujimave', label: '✨ Zaujímavé' },
+  { value: 'party', label: '🎉 Party' },
+  { value: 'sport', label: '🏃 Šport' },
+  { value: 'zapasy', label: '🏆 Zápasy' },
+  { value: 'umenie', label: '🎨 Umenie' },
+  { value: 'coffee', label: '☕ Coffee' },
+  { value: 'priroda', label: '🌿 Príroda' },
+  { value: 'gaming', label: '🎮 Gaming' },
+  { value: 'conference', label: '📋 Konferencia' },
+  { value: 'historia', label: '🏛️ História' },
+];
 
 export default function Home() {
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
   const [igUrl, setIgUrl] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('');
   const [city, setCity] = useState('Bratislava');
+  const [tag, setTag] = useState('zaujimave');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+
+  async function fetchPreview(url: string) {
+    if (!url) return;
+    try {
+      const res = await fetch(`/api/preview?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      setPreviewImage(data.imageUrl ?? null);
+    } catch {
+      setPreviewImage(null);
+    }
+  }
 
   function checkPassword(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +61,7 @@ export default function Home() {
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, igUrl, title, date, time, venue, city }),
+      body: JSON.stringify({ password, igUrl, title, date, time, venue, city, tag }),
     });
 
     const data = await res.json();
@@ -47,11 +72,13 @@ export default function Home() {
     } else {
       setSent(true);
       setIgUrl('');
+      setPreviewImage(null);
       setTitle('');
       setDate('');
       setTime('');
       setVenue('');
       setCity('Bratislava');
+      setTag('zaujimave');
     }
   }
 
@@ -98,10 +125,18 @@ export default function Home() {
             type="url"
             placeholder="Instagram link *"
             value={igUrl}
-            onChange={e => setIgUrl(e.target.value)}
+            onChange={e => { setIgUrl(e.target.value); setPreviewImage(null); }}
+            onBlur={e => fetchPreview(e.target.value)}
             required
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
           />
+
+          {previewImage && (
+            <div className="relative rounded-xl overflow-hidden h-48 bg-zinc-900">
+              <img src={previewImage} alt="preview" className="w-full h-full object-cover" />
+            </div>
+          )}
+
           <input
             type="text"
             placeholder="Názov eventu *"
@@ -131,13 +166,22 @@ export default function Home() {
             onChange={e => setVenue(e.target.value)}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
           />
-          <select
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
-          >
-            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="flex gap-3">
+            <select
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
+            >
+              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select
+              value={tag}
+              onChange={e => setTag(e.target.value)}
+              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
+            >
+              {TAGS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
           {sent && (

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         'Prefer': 'return=minimal',
       },
       body: JSON.stringify({
-        source_url: igUrl || '',
+        source_url: igUrl || `picks:${crypto.randomUUID()}`,
         source: 'instagram',
         title: title.trim(),
         description: description || '',

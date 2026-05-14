@@ -93,28 +93,32 @@ export default function Home() {
     }
   }
 
+  const inputClass = "w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white placeholder-[#555] focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]";
+
   if (!authed) {
     return (
-      <main className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <div className="text-4xl font-black text-[#CDFF00] tracking-tight mb-1">Woeva Picks</div>
-            <div className="text-zinc-500 text-sm">Admin</div>
+      <main className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-5">
+        <div className="w-full max-w-[360px]">
+          {/* Logo */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#C8FF00] mb-5">
+              <span className="text-2xl font-black text-black">W</span>
+            </div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Woeva Picks</h1>
+            <p className="text-[#555] text-sm mt-1">Admin prístup</p>
           </div>
-          <form onSubmit={checkPassword} className="space-y-4">
+
+          <form onSubmit={checkPassword} className="space-y-3">
             <input
               type="password"
               placeholder="Heslo"
               value={password}
               onChange={e => { setPassword(e.target.value); setError(''); }}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
+              className={inputClass}
               autoFocus
             />
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button
-              type="submit"
-              className="w-full bg-[#CDFF00] text-black font-bold py-3 rounded-xl hover:bg-[#b8e600] transition"
-            >
+            {error && <p className="text-red-400 text-sm px-1">{error}</p>}
+            <button type="submit" className="w-full bg-[#C8FF00] text-black font-bold py-3.5 rounded-2xl hover:bg-[#b4e800] active:scale-[0.98] transition-all text-[15px]">
               Vstúpiť
             </button>
           </form>
@@ -124,94 +128,108 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-4xl font-black text-[#CDFF00] tracking-tight mb-1">Woeva Picks</div>
-          <div className="text-zinc-500 text-sm">Pridaj event z Instagramu</div>
+    <main className="min-h-screen bg-[#0A0A0A] flex items-start justify-center p-5 pt-10 pb-16">
+      <div className="w-full max-w-[420px]">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-[#C8FF00] flex items-center justify-center flex-shrink-0">
+            <span className="text-lg font-black text-black">W</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white leading-tight">Woeva Picks</h1>
+            <p className="text-[#555] text-xs">Pridaj event z Instagramu</p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-2.5">
+
+          {/* URL input */}
           <input
             type="url"
-            placeholder="Instagram link *"
+            placeholder="Instagram / Facebook link *"
             value={igUrl}
             onChange={e => { setIgUrl(e.target.value); setPreviewImage(null); }}
             onBlur={e => enrichFromUrl(e.target.value)}
             required
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
+            className={inputClass}
           />
 
+          {/* Loading state */}
           {enriching && (
-            <div className="flex items-center gap-2 text-zinc-500 text-sm px-1">
-              <div className="w-4 h-4 border-2 border-[#CDFF00] border-t-transparent rounded-full animate-spin" />
-              Analyzujem link...
+            <div className="flex items-center gap-2.5 px-1 py-1">
+              <div className="w-4 h-4 border-2 border-[#C8FF00] border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              <span className="text-[#555] text-sm">Analyzujem link...</span>
             </div>
           )}
 
+          {/* Image preview */}
           {previewImage && !enriching && (
-            <div className="relative rounded-xl overflow-hidden h-48 bg-zinc-900">
+            <div className="rounded-2xl overflow-hidden bg-[#141414] aspect-video">
               <img src={previewImage} alt="preview" className="w-full h-full object-cover" />
             </div>
           )}
 
+          {/* Title */}
           <input
             type="text"
             placeholder="Názov eventu *"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
+            className={inputClass}
           />
-          <div className="flex gap-3">
+
+          {/* Date + Time */}
+          <div className="flex gap-2.5">
             <input
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
-              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
+              className={`flex-1 ${inputClass}`}
             />
             <input
               type="time"
               value={time}
               onChange={e => setTime(e.target.value)}
-              className="w-28 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
+              className="w-[110px] bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]"
             />
           </div>
+
+          {/* Venue */}
           <input
             type="text"
             placeholder="Miesto / venue"
             value={venue}
             onChange={e => setVenue(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
+            className={inputClass}
           />
-          <div className="flex gap-3">
-            <select
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
-            >
+
+          {/* City + Tag */}
+          <div className="flex gap-2.5">
+            <select value={city} onChange={e => setCity(e.target.value)}
+              className="flex-1 bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
               {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select
-              value={tag}
-              onChange={e => setTag(e.target.value)}
-              className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#CDFF00] transition"
-            >
+            <select value={tag} onChange={e => setTag(e.target.value)}
+              className="flex-1 bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
               {TAGS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {/* Feedback */}
+          {error && <p className="text-red-400 text-sm px-1">{error}</p>}
           {sent && (
-            <div className="bg-[#CDFF00]/10 border border-[#CDFF00]/30 rounded-xl px-4 py-3 text-[#CDFF00] text-sm text-center">
+            <div className="bg-[#C8FF00]/10 border border-[#C8FF00]/20 rounded-2xl px-4 py-3 text-[#C8FF00] text-sm text-center">
               ✓ Poslané — Bruno ho zoberie do 5 minút
             </div>
           )}
 
+          {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-[#CDFF00] text-black font-bold py-3 rounded-xl hover:bg-[#b8e600] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || enriching}
+            className="w-full bg-[#C8FF00] text-black font-bold py-4 rounded-2xl hover:bg-[#b4e800] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed text-[15px] mt-1"
           >
             {loading ? 'Posielam...' : 'Poslať do Discordu →'}
           </button>

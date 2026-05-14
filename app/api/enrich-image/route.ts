@@ -83,12 +83,14 @@ Return ONLY valid JSON, no explanation.`;
     if (!VALID_TAGS.includes(parsed.tag)) parsed.tag = 'zaujimave';
 
     const organizer = (parsed.organizer ?? '').trim();
-    const desc = (parsed.description ?? '').trim();
-    const fullDescription = organizer ? `${organizer} — ${desc}` : desc;
+    const rawTitle = (parsed.title ?? '').trim();
+    const fullTitle = organizer && !rawTitle.toLowerCase().startsWith(organizer.toLowerCase())
+      ? `${organizer} ${rawTitle}`
+      : rawTitle;
 
     return NextResponse.json({
-      title: parsed.title ?? '',
-      description: fullDescription,
+      title: fullTitle,
+      description: (parsed.description ?? '').trim(),
       date: parsed.date ?? '',
       time: parsed.time ?? '',
       venue: parsed.venue ?? '',

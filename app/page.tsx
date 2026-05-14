@@ -28,17 +28,28 @@ export default function Home() {
   const [city, setCity] = useState('Bratislava');
   const [tag, setTag] = useState('zaujimave');
   const [loading, setLoading] = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
-  async function fetchPreview(url: string) {
+  async function enrichFromUrl(url: string) {
     if (!url) return;
+    setEnriching(true);
+    setPreviewImage(null);
     try {
-      const res = await fetch(`/api/preview?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`/api/enrich?url=${encodeURIComponent(url)}`);
       const data = await res.json();
-      setPreviewImage(data.imageUrl ?? null);
+      if (data.title) setTitle(data.title);
+      if (data.date) setDate(data.date);
+      if (data.time) setTime(data.time);
+      if (data.venue) setVenue(data.venue);
+      if (data.city) setCity(data.city);
+      if (data.tag) setTag(data.tag);
+      if (data.imageUrl) setPreviewImage(data.imageUrl);
     } catch {
-      setPreviewImage(null);
+      // silent
+    } finally {
+      setEnriching(false);
     }
   }
 
@@ -126,12 +137,19 @@ export default function Home() {
             placeholder="Instagram link *"
             value={igUrl}
             onChange={e => { setIgUrl(e.target.value); setPreviewImage(null); }}
-            onBlur={e => fetchPreview(e.target.value)}
+            onBlur={e => enrichFromUrl(e.target.value)}
             required
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-[#CDFF00] transition"
           />
 
-          {previewImage && (
+          {enriching && (
+            <div className="flex items-center gap-2 text-zinc-500 text-sm px-1">
+              <div className="w-4 h-4 border-2 border-[#CDFF00] border-t-transparent rounded-full animate-spin" />
+              Analyzujem link...
+            </div>
+          )}
+
+          {previewImage && !enriching && (
             <div className="relative rounded-xl overflow-hidden h-48 bg-zinc-900">
               <img src={previewImage} alt="preview" className="w-full h-full object-cover" />
             </div>

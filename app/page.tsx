@@ -109,14 +109,16 @@ export default function Home() {
 
     const fileToUpload = coverSameAsScreenshot ? screenshotImage : coverFile;
     if (fileToUpload) {
-      try {
-        const fd = new FormData();
-        fd.append('file', fileToUpload);
-        const upRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
-        const upData = await upRes.json();
-        if (upData.url) imageUrl = upData.url;
-      } catch {
-        // continue without image
+      const fd = new FormData();
+      fd.append('file', fileToUpload);
+      const upRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
+      const upData = await upRes.json();
+      if (upData.url) {
+        imageUrl = upData.url;
+      } else {
+        setLoading(false);
+        setError(`Upload fotky zlyhal: ${upData.error || 'neznáma chyba'}`);
+        return;
       }
     }
 

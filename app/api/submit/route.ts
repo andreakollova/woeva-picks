@@ -16,7 +16,7 @@ async function fetchOgImage(url: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const { password, igUrl, title, date, time, venue, city, tag, imageUrl } = await req.json();
+  const { password, igUrl, title, description, date, time, venue, city, tag, imageUrl } = await req.json();
 
   if (password !== process.env.ADMIN_PASSWORD) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -39,10 +39,10 @@ export async function POST(req: NextRequest) {
         'Prefer': 'return=minimal',
       },
       body: JSON.stringify({
-        source_url: igUrl || null,
+        source_url: igUrl || '',
         source: 'instagram',
         title: title.trim(),
-        description: '',
+        description: description || '',
         tag: tag || 'zaujimave',
         date: date || null,
         time_start: time || null,

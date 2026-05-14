@@ -31,6 +31,7 @@ export default function Home() {
 
   const [igUrl, setIgUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('');
@@ -56,6 +57,7 @@ export default function Home() {
       const res = await fetch('/api/enrich-image', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.title) setTitle(data.title);
+      if (data.description) setDescription(data.description);
       if (data.date) setDate(data.date);
       if (data.time) setTime(data.time);
       if (data.venue) setVenue(data.venue);
@@ -121,7 +123,7 @@ export default function Home() {
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, igUrl, title, date, time, venue, city, tag, imageUrl }),
+      body: JSON.stringify({ password, igUrl, title, description, date, time, venue, city, tag, imageUrl }),
     });
 
     const data = await res.json();
@@ -140,6 +142,7 @@ export default function Home() {
       setCoverSameAsScreenshot(true);
       setIgUrl('');
       setTitle('');
+      setDescription('');
       setDate('');
       setTime('');
       setVenue('');
@@ -251,6 +254,10 @@ export default function Home() {
 
           <input type="text" placeholder="Názov eventu *" value={title}
             onChange={e => setTitle(e.target.value)} required className={inputClass} />
+
+          <textarea placeholder="Popis eventu" value={description}
+            onChange={e => setDescription(e.target.value)} rows={3}
+            className="w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white placeholder-[#555] focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] resize-none" />
 
           <div className="flex gap-2.5">
             <input type="date" value={date} onChange={e => setDate(e.target.value)}

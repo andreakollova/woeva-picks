@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 const CITIES = ['Bratislava', 'Košice', 'Nitra', 'Vienna', 'Prague', 'London'];
 const TAGS = [
@@ -19,28 +19,40 @@ const TAGS = [
 export default function Home() {
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
+
+  const [screenshotImage, setScreenshotImage] = useState<File | null>(null);
+  const [screenshotPopis, setScreenshotPopis] = useState<File | null>(null);
+  const [screenshotImagePreview, setScreenshotImagePreview] = useState<string | null>(null);
+  const [screenshotPopisPreview, setScreenshotPopisPreview] = useState<string | null>(null);
+
+  const [coverSameAsScreenshot, setCoverSameAsScreenshot] = useState(true);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+
   const [igUrl, setIgUrl] = useState('');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('');
   const [city, setCity] = useState('Bratislava');
   const [tag, setTag] = useState('zaujimave');
-  const [loading, setLoading] = useState(false);
+
   const [enriching, setEnriching] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
 
-  async function enrichFromScreenshot(files: FileList) {
+  const screenshotImageRef = useRef<HTMLInputElement>(null);
+  const screenshotPopisRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+
+  async function runEnrichment(imageFile: File | null, popisFile: File | null) {
+    const files = [imageFile, popisFile].filter(Boolean) as File[];
     if (!files.length) return;
-    const file = files[0];
-    setScreenshotPreview(URL.createObjectURL(file));
     setEnriching(true);
     try {
       const fd = new FormData();
-      Array.from(files).forEach(f => fd.append('images', f));
+      files.forEach(f => fd.append('images', f));
       const res = await fetch('/api/enrich-image', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.title) setTitle(data.title);
@@ -56,25 +68,22 @@ export default function Home() {
     }
   }
 
-  async function enrichFromUrl(url: string) {
-    if (!url) return;
-    setEnriching(true);
-    setPreviewImage(null);
-    try {
-      const res = await fetch(`/api/enrich?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      if (data.title) setTitle(data.title);
-      if (data.date) setDate(data.date);
-      if (data.time) setTime(data.time);
-      if (data.venue) setVenue(data.venue);
-      if (data.city) setCity(data.city);
-      if (data.tag) setTag(data.tag);
-      if (data.imageUrl) setPreviewImage(data.imageUrl);
-    } catch {
-      // silent
-    } finally {
-      setEnriching(false);
-    }
+  function handleScreenshotImage(file: File) {
+    setScreenshotImage(file);
+    const url = URL.createObjectURL(file);
+    setScreenshotImagePreview(url);
+    runEnrichment(file, screenshotPopis);
+  }
+
+  function handleScreenshotPopis(file: File) {
+    setScreenshotPopis(file);
+    setScreenshotPopisPreview(URL.createObjectURL(file));
+    runEnrichment(screenshotImage, file);
+  }
+
+  function handleCoverFile(file: File) {
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
   }
 
   function checkPassword(e: React.FormEvent) {
@@ -89,14 +98,30 @@ export default function Home() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!title) { setError('Zadaj názov eventu'); return; }
     setLoading(true);
     setError('');
     setSent(false);
 
+    let imageUrl: string | null = null;
+
+    const fileToUpload = coverSameAsScreenshot ? screenshotImage : coverFile;
+    if (fileToUpload) {
+      try {
+        const fd = new FormData();
+        fd.append('file', fileToUpload);
+        const upRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
+        const upData = await upRes.json();
+        if (upData.url) imageUrl = upData.url;
+      } catch {
+        // continue without image
+      }
+    }
+
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, igUrl, title, date, time, venue, city, tag }),
+      body: JSON.stringify({ password, igUrl, title, date, time, venue, city, tag, imageUrl }),
     });
 
     const data = await res.json();
@@ -106,25 +131,34 @@ export default function Home() {
       setError(data.error || 'Niečo sa pokazilo');
     } else {
       setSent(true);
+      setScreenshotImage(null);
+      setScreenshotPopis(null);
+      setScreenshotImagePreview(null);
+      setScreenshotPopisPreview(null);
+      setCoverFile(null);
+      setCoverPreview(null);
+      setCoverSameAsScreenshot(true);
       setIgUrl('');
-      setPreviewImage(null);
-      setScreenshotPreview(null);
       setTitle('');
       setDate('');
       setTime('');
       setVenue('');
       setCity('Bratislava');
       setTag('zaujimave');
+      if (screenshotImageRef.current) screenshotImageRef.current.value = '';
+      if (screenshotPopisRef.current) screenshotPopisRef.current.value = '';
+      if (coverRef.current) coverRef.current.value = '';
     }
   }
 
   const inputClass = "w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white placeholder-[#555] focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]";
 
+  const coverDisplayPreview = coverSameAsScreenshot ? screenshotImagePreview : coverPreview;
+
   if (!authed) {
     return (
       <main className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-5">
         <div className="w-full max-w-[360px]">
-          {/* Logo */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#C8FF00] mb-5">
               <span className="text-2xl font-black text-black">W</span>
@@ -132,7 +166,6 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-white tracking-tight">Woeva Picks</h1>
             <p className="text-[#555] text-sm mt-1">Admin prístup</p>
           </div>
-
           <form onSubmit={checkPassword} className="space-y-3">
             <input
               type="password"
@@ -163,93 +196,72 @@ export default function Home() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white leading-tight">Woeva Picks</h1>
-            <p className="text-[#555] text-xs">Pridaj event z Instagramu</p>
+            <p className="text-[#555] text-xs">Pridaj event</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-2.5">
+        <form onSubmit={handleSubmit} className="space-y-3">
 
-          {/* URL input */}
-          <input
-            type="url"
-            placeholder="Instagram / Facebook link *"
-            value={igUrl}
-            onChange={e => { setIgUrl(e.target.value); setPreviewImage(null); }}
-            onBlur={e => enrichFromUrl(e.target.value)}
-            required
-            className={inputClass}
-          />
-
-          {/* Screenshot upload */}
-          <label className="flex items-center justify-center gap-2 w-full border border-dashed border-[#333] rounded-2xl py-3 px-4 cursor-pointer hover:border-[#C8FF00]/50 transition-colors group">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={e => { if (e.target.files?.length) enrichFromScreenshot(e.target.files); }}
-            />
-            {screenshotPreview ? (
-              <img src={screenshotPreview} alt="screenshot" className="h-10 w-10 object-cover rounded-lg flex-shrink-0" />
-            ) : (
-              <span className="text-[#555] text-xl">📸</span>
-            )}
-            <span className="text-[#555] text-sm group-hover:text-[#888] transition-colors">
-              {screenshotPreview ? 'Screenshot nahraný — zmeň ak treba' : 'Nahraj screenshot z IG postu'}
-            </span>
-          </label>
-
-          {/* Loading state */}
-          {enriching && (
-            <div className="flex items-center gap-2.5 px-1 py-1">
-              <div className="w-4 h-4 border-2 border-[#C8FF00] border-t-transparent rounded-full animate-spin flex-shrink-0" />
-              <span className="text-[#555] text-sm">Analyzujem link...</span>
-            </div>
-          )}
-
-          {/* Image preview */}
-          {previewImage && !enriching && (
-            <div className="rounded-2xl overflow-hidden bg-[#141414] aspect-video">
-              <img src={previewImage} alt="preview" className="w-full h-full object-cover" />
-            </div>
-          )}
-
-          {/* Title */}
-          <input
-            type="text"
-            placeholder="Názov eventu *"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            required
-            className={inputClass}
-          />
-
-          {/* Date + Time */}
+          {/* Screenshots */}
+          <p className="text-[#555] text-xs uppercase tracking-widest px-1">Screenshoty</p>
           <div className="flex gap-2.5">
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              className={`flex-1 ${inputClass}`}
-            />
-            <input
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
-              className="w-[110px] bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]"
-            />
+            {/* Screenshot obrazku */}
+            <label className="flex-1 cursor-pointer">
+              <input ref={screenshotImageRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleScreenshotImage(f); }} />
+              <div className="relative bg-[#141414] border border-[#222] rounded-2xl overflow-hidden aspect-square flex flex-col items-center justify-center gap-2 hover:border-[#C8FF00]/40 transition-colors">
+                {screenshotImagePreview ? (
+                  <img src={screenshotImagePreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <span className="text-2xl">🖼️</span>
+                    <span className="text-[#555] text-xs text-center px-2">Screenshot<br />obrazku</span>
+                  </>
+                )}
+              </div>
+            </label>
+
+            {/* Screenshot popisu */}
+            <label className="flex-1 cursor-pointer">
+              <input ref={screenshotPopisRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleScreenshotPopis(f); }} />
+              <div className="relative bg-[#141414] border border-[#222] rounded-2xl overflow-hidden aspect-square flex flex-col items-center justify-center gap-2 hover:border-[#C8FF00]/40 transition-colors">
+                {screenshotPopisPreview ? (
+                  <img src={screenshotPopisPreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <span className="text-2xl">📝</span>
+                    <span className="text-[#555] text-xs text-center px-2">Screenshot<br />popisu</span>
+                  </>
+                )}
+              </div>
+            </label>
           </div>
 
-          {/* Venue */}
-          <input
-            type="text"
-            placeholder="Miesto / venue"
-            value={venue}
-            onChange={e => setVenue(e.target.value)}
-            className={inputClass}
-          />
+          {/* Enriching spinner */}
+          {enriching && (
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="w-4 h-4 border-2 border-[#C8FF00] border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              <span className="text-[#555] text-sm">Analyzujem screenshoty...</span>
+            </div>
+          )}
 
-          {/* City + Tag */}
+          {/* Event fields */}
+          <p className="text-[#555] text-xs uppercase tracking-widest px-1 pt-1">Detaily eventu</p>
+
+          <input type="text" placeholder="Názov eventu *" value={title}
+            onChange={e => setTitle(e.target.value)} required className={inputClass} />
+
+          <div className="flex gap-2.5">
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              className={`flex-1 ${inputClass}`} />
+            <input type="time" value={time} onChange={e => setTime(e.target.value)}
+              className="w-[110px] bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]" />
+          </div>
+
+          <input type="text" placeholder="Miesto / venue" value={venue}
+            onChange={e => setVenue(e.target.value)} className={inputClass} />
+
           <div className="flex gap-2.5">
             <select value={city} onChange={e => setCity(e.target.value)}
               className="flex-1 bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
@@ -261,6 +273,44 @@ export default function Home() {
             </select>
           </div>
 
+          <input type="url" placeholder="Instagram / Facebook link (voliteľné)" value={igUrl}
+            onChange={e => setIgUrl(e.target.value)}
+            className={inputClass} />
+
+          {/* Cover photo */}
+          <p className="text-[#555] text-xs uppercase tracking-widest px-1 pt-1">Titulná fotka</p>
+
+          <label className="flex items-center gap-3 px-1 cursor-pointer select-none">
+            <div onClick={() => setCoverSameAsScreenshot(v => !v)}
+              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${coverSameAsScreenshot ? 'bg-[#C8FF00] border-[#C8FF00]' : 'border-[#444]'}`}>
+              {coverSameAsScreenshot && <span className="text-black text-xs font-bold">✓</span>}
+            </div>
+            <span className="text-[#888] text-sm">Rovnaká ako screenshot obrazku</span>
+          </label>
+
+          {!coverSameAsScreenshot && (
+            <label className="cursor-pointer block">
+              <input ref={coverRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverFile(f); }} />
+              <div className="bg-[#141414] border border-dashed border-[#333] rounded-2xl py-4 px-4 flex items-center gap-3 hover:border-[#C8FF00]/40 transition-colors">
+                {coverPreview ? (
+                  <img src={coverPreview} alt="" className="w-12 h-12 object-cover rounded-xl flex-shrink-0" />
+                ) : (
+                  <span className="text-2xl">🖼️</span>
+                )}
+                <span className="text-[#555] text-sm">
+                  {coverPreview ? 'Titulná fotka nahraná — zmeň ak treba' : 'Nahraj titulnú fotku'}
+                </span>
+              </div>
+            </label>
+          )}
+
+          {coverDisplayPreview && (
+            <div className="rounded-2xl overflow-hidden bg-[#141414] aspect-video">
+              <img src={coverDisplayPreview} alt="cover" className="w-full h-full object-cover" />
+            </div>
+          )}
+
           {/* Feedback */}
           {error && <p className="text-red-400 text-sm px-1">{error}</p>}
           {sent && (
@@ -270,11 +320,8 @@ export default function Home() {
           )}
 
           {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading || enriching}
-            className="w-full bg-[#C8FF00] text-black font-bold py-4 rounded-2xl hover:bg-[#b4e800] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed text-[15px] mt-1"
-          >
+          <button type="submit" disabled={loading || enriching}
+            className="w-full bg-[#C8FF00] text-black font-bold py-4 rounded-2xl hover:bg-[#b4e800] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed text-[15px] mt-1">
             {loading ? 'Posielam...' : 'Poslať do Discordu →'}
           </button>
         </form>

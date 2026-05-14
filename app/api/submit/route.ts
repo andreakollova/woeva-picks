@@ -16,17 +16,17 @@ async function fetchOgImage(url: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const { password, igUrl, title, date, time, venue, city, tag } = await req.json();
+  const { password, igUrl, title, date, time, venue, city, tag, imageUrl } = await req.json();
 
   if (password !== process.env.ADMIN_PASSWORD) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!igUrl || !title) {
-    return NextResponse.json({ error: 'igUrl and title are required' }, { status: 400 });
+  if (!title) {
+    return NextResponse.json({ error: 'title is required' }, { status: 400 });
   }
 
-  const photoUrl = await fetchOgImage(igUrl);
+  const photoUrl = imageUrl || (igUrl ? await fetchOgImage(igUrl) : null);
 
   const res = await fetch(
     `${process.env.SUPABASE_URL}/rest/v1/scraped_events`,
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         'Prefer': 'return=minimal',
       },
       body: JSON.stringify({
-        source_url: igUrl,
+        source_url: igUrl || null,
         source: 'instagram',
         title: title.trim(),
         description: '',

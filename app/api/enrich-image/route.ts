@@ -27,14 +27,23 @@ export async function POST(req: NextRequest) {
   const prompt = `You are extracting event details from screenshot(s) of an Instagram or Facebook post.
 Today's date: ${today}
 
-Look at the screenshot(s) carefully — find the event name, date, time, venue, and any other details visible in the post or caption.
+Look at the screenshot(s) carefully — find all visible details: event name, date, time, venue, organizer/account name, and caption text.
 Parse dates in any language (Slovak, Czech, German, English).
 Examples: "5. júna", "piatok 20:00", "6.6.2025", "Freitag 21 Uhr", "Friday June 6th"
 If a relative date is mentioned ("tento piatok", "this Friday"), calculate the actual date from today.
 
+DESCRIPTION LANGUAGE RULES:
+- City is Bratislava, Košice or Nitra → write description in Slovak
+- City is Vienna → write in German
+- City is Prague → write in Czech
+- City is London → write in English
+
+ORGANIZER: Look for the Instagram/Facebook account name, page name, venue name, or any text indicating who organizes the event (e.g. "by Meraki", "presented by X", account handle visible in screenshot). Extract the organizer name without "@".
+
 Return a JSON object:
-- "title": event name (string, max 120 chars)
-- "description": short fun description in the language of the event, max 25 words, start with one emoji
+- "title": event name only, no venue prefix (string, max 120 chars)
+- "organizer": name of the organizer/venue/account, or ""
+- "description": short fun description in the correct language, MAX 25 WORDS, start with one emoji, do NOT mention the organizer here
 - "date": event date as YYYY-MM-DD, or ""
 - "time": event start time as HH:MM (24h), or ""
 - "venue": venue or location name, or ""
@@ -73,9 +82,13 @@ Return ONLY valid JSON, no explanation.`;
 
     if (!VALID_TAGS.includes(parsed.tag)) parsed.tag = 'zaujimave';
 
+    const organizer = (parsed.organizer ?? '').trim();
+    const desc = (parsed.description ?? '').trim();
+    const fullDescription = organizer ? `${organizer} — ${desc}` : desc;
+
     return NextResponse.json({
       title: parsed.title ?? '',
-      description: parsed.description ?? '',
+      description: fullDescription,
       date: parsed.date ?? '',
       time: parsed.time ?? '',
       venue: parsed.venue ?? '',

@@ -46,11 +46,16 @@ export default function Home() {
   const screenshotImageRef = useRef<HTMLInputElement>(null);
   const screenshotPopisRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
+  const enrichIdRef = useRef(0);
 
   async function runEnrichment(imageFile: File | null, popisFile: File | null) {
     const files = [imageFile, popisFile].filter(Boolean) as File[];
     if (!files.length) return;
-    // Clear all fields before filling so user never sees partial/wrong values
+
+    enrichIdRef.current += 1;
+    const myId = enrichIdRef.current;
+
+    // Clear fields and show loader — user sees only spinner until final result
     setTitle('');
     setDescription('');
     setDate('');
@@ -59,11 +64,16 @@ export default function Home() {
     setCity('Bratislava');
     setTags(['zaujimave']);
     setEnriching(true);
+
     try {
       const fd = new FormData();
       files.forEach(f => fd.append('images', f));
       const res = await fetch('/api/enrich-image', { method: 'POST', body: fd });
       const data = await res.json();
+
+      // Discard stale response if a newer enrichment was triggered
+      if (myId !== enrichIdRef.current) return;
+
       if (data.title) setTitle(data.title);
       if (data.description) setDescription(data.description);
       if (data.date) setDate(data.date);
@@ -74,7 +84,7 @@ export default function Home() {
     } catch {
       // silent
     } finally {
-      setEnriching(false);
+      if (myId === enrichIdRef.current) setEnriching(false);
     }
   }
 

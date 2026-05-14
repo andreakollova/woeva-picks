@@ -31,6 +31,30 @@ export default function Home() {
   const [enriching, setEnriching] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+
+  async function enrichFromScreenshot(files: FileList) {
+    if (!files.length) return;
+    const file = files[0];
+    setScreenshotPreview(URL.createObjectURL(file));
+    setEnriching(true);
+    try {
+      const fd = new FormData();
+      Array.from(files).forEach(f => fd.append('images', f));
+      const res = await fetch('/api/enrich-image', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.title) setTitle(data.title);
+      if (data.date) setDate(data.date);
+      if (data.time) setTime(data.time);
+      if (data.venue) setVenue(data.venue);
+      if (data.city) setCity(data.city);
+      if (data.tag) setTag(data.tag);
+    } catch {
+      // silent
+    } finally {
+      setEnriching(false);
+    }
+  }
 
   async function enrichFromUrl(url: string) {
     if (!url) return;
@@ -84,6 +108,7 @@ export default function Home() {
       setSent(true);
       setIgUrl('');
       setPreviewImage(null);
+      setScreenshotPreview(null);
       setTitle('');
       setDate('');
       setTime('');
@@ -154,6 +179,25 @@ export default function Home() {
             required
             className={inputClass}
           />
+
+          {/* Screenshot upload */}
+          <label className="flex items-center justify-center gap-2 w-full border border-dashed border-[#333] rounded-2xl py-3 px-4 cursor-pointer hover:border-[#C8FF00]/50 transition-colors group">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={e => { if (e.target.files?.length) enrichFromScreenshot(e.target.files); }}
+            />
+            {screenshotPreview ? (
+              <img src={screenshotPreview} alt="screenshot" className="h-10 w-10 object-cover rounded-lg flex-shrink-0" />
+            ) : (
+              <span className="text-[#555] text-xl">📸</span>
+            )}
+            <span className="text-[#555] text-sm group-hover:text-[#888] transition-colors">
+              {screenshotPreview ? 'Screenshot nahraný — zmeň ak treba' : 'Nahraj screenshot z IG postu'}
+            </span>
+          </label>
 
           {/* Loading state */}
           {enriching && (

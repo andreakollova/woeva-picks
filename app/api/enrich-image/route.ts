@@ -38,7 +38,7 @@ DESCRIPTION LANGUAGE RULES:
 - City is Prague → write in Czech
 - City is London → write in English
 
-ORGANIZER: Look for the Instagram/Facebook account name, page name, venue name, or any text indicating who organizes the event (e.g. "by Meraki", "presented by X", account handle visible in screenshot). Extract the organizer name without "@".
+ORGANIZER: Look for the real-world name of who is organizing or hosting the event — this is typically a bar, club, restaurant, company, or organization name visible in the image or caption (e.g. "Meraki Bar", "Tabačka Kulturfabrik", "Nu Spirit Club"). Do NOT use the Instagram/Facebook account handle or username. If unsure, use the venue name.
 
 Return a JSON object:
 - "title": event name only, no venue prefix (string, max 120 chars)

@@ -50,6 +50,14 @@ export default function Home() {
   async function runEnrichment(imageFile: File | null, popisFile: File | null) {
     const files = [imageFile, popisFile].filter(Boolean) as File[];
     if (!files.length) return;
+    // Clear all fields before filling so user never sees partial/wrong values
+    setTitle('');
+    setDescription('');
+    setDate('');
+    setTime('');
+    setVenue('');
+    setCity('Bratislava');
+    setTag('zaujimave');
     setEnriching(true);
     try {
       const fd = new FormData();

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-const CITIES = ['Bratislava', 'Košice', 'Vienna', 'Prague', 'London'];
+const CITIES = ['Bratislava', 'Košice', 'Nitra', 'Vienna', 'Prague', 'London'];
 
 export default function Home() {
   const [password, setPassword] = useState('');

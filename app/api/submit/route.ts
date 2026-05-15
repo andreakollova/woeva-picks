@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         'apikey': process.env.SUPABASE_KEY!,
         'Authorization': `Bearer ${process.env.SUPABASE_KEY!}`,
-        'Prefer': 'return=minimal',
+        'Prefer': 'return=representation',
       },
       body: JSON.stringify({
         source_url: igUrl || `picks:${crypto.randomUUID()}`,
@@ -59,10 +59,19 @@ export async function POST(req: NextRequest) {
     }
   );
 
+  const body = await res.text();
   if (!res.ok) {
-    const text = await res.text();
-    console.error('Supabase insert error:', text);
-    return NextResponse.json({ error: text }, { status: 500 });
+    console.error('Supabase insert error:', body);
+    return NextResponse.json({ error: body }, { status: 500 });
+  }
+
+  // With return=representation, Supabase returns the inserted rows.
+  // An empty array means RLS silently blocked the insert.
+  let rows: unknown[] = [];
+  try { rows = JSON.parse(body); } catch {}
+  if (!Array.isArray(rows) || rows.length === 0) {
+    console.error('Supabase insert returned no rows — check RLS policies on scraped_events');
+    return NextResponse.json({ error: 'Insert blocked — skontroluj Supabase RLS politiky na scraped_events' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

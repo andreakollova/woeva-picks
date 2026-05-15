@@ -74,6 +74,11 @@ export default function Home() {
       // Discard stale response if a newer enrichment was triggered
       if (myId !== enrichIdRef.current) return;
 
+      if (!res.ok) {
+        setError(`Analýza zlyhala: ${data.error || res.status}`);
+        return;
+      }
+
       if (data.title) setTitle(data.title);
       if (data.description) setDescription(data.description);
       if (data.date) setDate(data.date);
@@ -82,7 +87,7 @@ export default function Home() {
       if (data.city) setCity(data.city);
       if (data.tag) setTags([data.tag]);
     } catch {
-      // silent
+      if (myId === enrichIdRef.current) setError('Analýza screenshotov zlyhala — skontroluj OPENAI_API_KEY v Vercel');
     } finally {
       if (myId === enrichIdRef.current) setEnriching(false);
     }
@@ -108,11 +113,11 @@ export default function Home() {
 
   function checkPassword(e: React.FormEvent) {
     e.preventDefault();
-    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || password === 'admin') {
+    if (password) {
       setAuthed(true);
       setError('');
     } else {
-      setError('Zlé heslo');
+      setError('Zadaj heslo');
     }
   }
 
@@ -123,36 +128,43 @@ export default function Home() {
     setError('');
     setSent(false);
 
-    let imageUrl: string | null = null;
+    try {
+      let imageUrl: string | null = null;
 
-    const fileToUpload = coverSameAsScreenshot ? screenshotImage : coverFile;
-    if (fileToUpload) {
-      const fd = new FormData();
-      fd.append('file', fileToUpload);
-      const upRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
-      const upData = await upRes.json();
-      if (upData.url) {
-        imageUrl = upData.url;
-      } else {
-        setLoading(false);
-        setError(`Upload fotky zlyhal: ${upData.error || 'neznáma chyba'}`);
+      const fileToUpload = coverSameAsScreenshot ? screenshotImage : coverFile;
+      if (fileToUpload) {
+        const fd = new FormData();
+        fd.append('file', fileToUpload);
+        const upRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
+        const upData = await upRes.json();
+        if (upData.url) {
+          imageUrl = upData.url;
+        } else {
+          setError(`Upload fotky zlyhal: ${upData.error || 'neznáma chyba'}`);
+          return;
+        }
+      }
+
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, igUrl, title, description, date, time, venue, city, tag: tags.join(','), imageUrl }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Niečo sa pokazilo');
         return;
       }
+    } catch (err) {
+      setError(`Chyba: ${err}`);
+      return;
+    } finally {
+      setLoading(false);
     }
 
-    const res = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, igUrl, title, description, date, time, venue, city, tag: tags.join(','), imageUrl }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || 'Niečo sa pokazilo');
-    } else {
-      setSent(true);
+    setSent(true);
       setScreenshotImage(null);
       setScreenshotPopis(null);
       setScreenshotImagePreview(null);
@@ -171,7 +183,6 @@ export default function Home() {
       if (screenshotImageRef.current) screenshotImageRef.current.value = '';
       if (screenshotPopisRef.current) screenshotPopisRef.current.value = '';
       if (coverRef.current) coverRef.current.value = '';
-    }
   }
 
   const inputClass = "w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white placeholder-[#555] focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]";

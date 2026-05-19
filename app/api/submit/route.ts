@@ -16,7 +16,7 @@ async function fetchOgImage(url: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const { password, igUrl, title, description, date, time, venue, city, tag, imageUrl } = await req.json();
+  const { password, igUrl, title, description, date, time, venue, venueLat, venueLng, city, tag, imageUrl, price } = await req.json();
 
   if (password !== process.env.ADMIN_PASSWORD) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -47,10 +47,12 @@ export async function POST(req: NextRequest) {
         date: date || null,
         time_start: time || null,
         venue: venue || null,
+        lat: venueLat || null,
+        lng: venueLng || null,
         city: city || 'Bratislava',
         country: 'SK',
         photo_url: photoUrl,
-        price: 'Zadarmo',
+        price: price || 'Zadarmo',
         scraped_at: new Date().toISOString(),
         discord_sent: false,
         approved: false,

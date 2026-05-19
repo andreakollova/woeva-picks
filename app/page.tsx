@@ -83,6 +83,7 @@ export default function Home() {
   const venueDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [city, setCity] = useState('Bratislava');
   const [tags, setTags] = useState<string[]>(['zaujimave']);
+  const [price, setPrice] = useState<'Zadarmo' | 'Platba na mieste'>('Zadarmo');
 
   // Bulk mode — up to 3 slots
   const [slots, setSlots] = useState<Slot[]>([{ ...EMPTY_SLOT }]);
@@ -247,6 +248,7 @@ export default function Home() {
     setVenueResults([]);
     setCity('Bratislava');
     setTags(['zaujimave']);
+    setPrice('Zadarmo');
     setSlots([{ ...EMPTY_SLOT }]);
     if (screenshotImageRef.current) screenshotImageRef.current.value = '';
     if (screenshotPopisRef.current) screenshotPopisRef.current.value = '';
@@ -280,7 +282,7 @@ export default function Home() {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, igUrl, title, description, date, time, venue, venueLat, venueLng, city, tag: tags.join(','), imageUrl }),
+        body: JSON.stringify({ password, igUrl, title, description, date, time, venue, venueLat, venueLng, city, tag: tags.join(','), imageUrl, price }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Niečo sa pokazilo'); return; }
@@ -322,7 +324,7 @@ export default function Home() {
         const res = await fetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password, igUrl, title, description, date: slot.date, time: slot.time, venue, venueLat, venueLng, city, tag: tags.join(','), imageUrl: slotImageUrl }),
+          body: JSON.stringify({ password, igUrl, title, description, date: slot.date, time: slot.time, venue, venueLat, venueLng, city, tag: tags.join(','), imageUrl: slotImageUrl, price }),
         });
         const data = await res.json();
         if (!res.ok) { setError(`Termín ${count + 1}: ${data.error || 'chyba'}`); return; }
@@ -580,6 +582,17 @@ export default function Home() {
             })}
           </div>
           <p className="text-[#444] text-xs px-1">Max 3 tagy — GPT vyberie prvý automaticky</p>
+
+          {/* Price */}
+          <p className="text-[#555] text-xs uppercase tracking-widest px-1 pt-1">Vstupné</p>
+          <div className="flex gap-2">
+            {(['Zadarmo', 'Platba na mieste'] as const).map(p => (
+              <button key={p} type="button" onClick={() => setPrice(p)}
+                className={`flex-1 py-3 rounded-2xl text-sm font-semibold transition-all border ${price === p ? 'bg-[#C8FF00] text-black border-[#C8FF00]' : 'bg-transparent text-[#555] border-[#222] hover:border-[#555]'}`}>
+                {p === 'Zadarmo' ? '🆓 Zadarmo' : '💵 Platba na mieste'}
+              </button>
+            ))}
+          </div>
 
           <input type="url" placeholder="Instagram / Facebook link (voliteľné)" value={igUrl}
             onChange={e => setIgUrl(e.target.value)}

@@ -104,10 +104,17 @@ export default function Home() {
       const fd = new FormData();
       files.forEach(f => fd.append('images', f));
       const res = await fetch('/api/enrich-image', { method: 'POST', body: fd });
-      const data = await res.json();
 
       // Discard stale response if a newer enrichment was triggered
       if (myId !== enrichIdRef.current) return;
+
+      let data: Record<string, string> = {};
+      try {
+        data = await res.json();
+      } catch {
+        setError(`Analýza zlyhala: server error ${res.status}`);
+        return;
+      }
 
       if (!res.ok) {
         setError(`Analýza zlyhala: ${data.error || res.status}`);

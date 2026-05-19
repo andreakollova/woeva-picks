@@ -16,9 +16,20 @@ const TAGS = [
   { value: 'historia', label: '🏛️ História' },
 ];
 
+type Slot = {
+  date: string;
+  time: string;
+  coverSameAsMain: boolean;
+  coverFile: File | null;
+  coverPreview: string | null;
+};
+
+const EMPTY_SLOT: Slot = { date: '', time: '', coverSameAsMain: true, coverFile: null, coverPreview: null };
+
 export default function Home() {
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
+  const [mode, setMode] = useState<'single' | 'bulk'>('single');
 
   const [screenshotImage, setScreenshotImage] = useState<File | null>(null);
   const [screenshotPopis, setScreenshotPopis] = useState<File | null>(null);
@@ -35,18 +46,42 @@ export default function Home() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('');
+  const [venueLat, setVenueLat] = useState<number | null>(null);
+  const [venueLng, setVenueLng] = useState<number | null>(null);
+  const [venueResults, setVenueResults] = useState<{name: string; city: string; lat: number; lng: number}[]>([]);
+  const [venueConfirmed, setVenueConfirmed] = useState(false);
+  const [venueLoading, setVenueLoading] = useState(false);
+  const venueDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [city, setCity] = useState('Bratislava');
   const [tags, setTags] = useState<string[]>(['zaujimave']);
+
+  // Bulk mode — up to 3 slots
+  const [slots, setSlots] = useState<Slot[]>([{ ...EMPTY_SLOT }]);
+  const slotCoverRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [enriching, setEnriching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
   const [error, setError] = useState('');
 
   const screenshotImageRef = useRef<HTMLInputElement>(null);
   const screenshotPopisRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const enrichIdRef = useRef(0);
+
+  function updateSlot(i: number, patch: Partial<Slot>) {
+    setSlots(prev => prev.map((s, idx) => idx === i ? { ...s, ...patch } : s));
+  }
+
+  function addSlot() {
+    if (slots.length >= 3) return;
+    setSlots(prev => [...prev, { ...EMPTY_SLOT }]);
+  }
+
+  function removeSlot(i: number) {
+    setSlots(prev => prev.filter((_, idx) => idx !== i));
+  }
 
   async function runEnrichment(imageFile: File | null, popisFile: File | null) {
     const files = [imageFile, popisFile].filter(Boolean) as File[];
@@ -86,8 +121,8 @@ export default function Home() {
       if (data.venue) setVenue(data.venue);
       if (data.city) setCity(data.city);
       if (data.tag) setTags([data.tag]);
-    } catch {
-      if (myId === enrichIdRef.current) setError('Analýza screenshotov zlyhala — skontroluj OPENAI_API_KEY v Vercel');
+    } catch (err: unknown) {
+      if (myId === enrichIdRef.current) setError('Analýza zlyhala: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       if (myId === enrichIdRef.current) setEnriching(false);
     }
@@ -106,6 +141,39 @@ export default function Home() {
     runEnrichment(screenshotImage, file);
   }
 
+  async function handleVenueSearch(q: string) {
+    setVenue(q);
+    setVenueConfirmed(false);
+    setVenueLat(null);
+    setVenueLng(null);
+    setVenueResults([]);
+    if (q.length < 3) return;
+    if (venueDebounce.current) clearTimeout(venueDebounce.current);
+    venueDebounce.current = setTimeout(async () => {
+      setVenueLoading(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5`, { headers: { 'Accept-Language': 'sk,en' } });
+        const data = await res.json();
+        setVenueResults(data.map((r: any) => ({
+          name: r.display_name.split(', ').slice(0, 3).join(', '),
+          city: r.address?.city ?? r.address?.town ?? r.address?.village ?? '',
+          lat: parseFloat(r.lat),
+          lng: parseFloat(r.lon),
+        })));
+      } catch {}
+      finally { setVenueLoading(false); }
+    }, 400);
+  }
+
+  function selectVenue(r: {name: string; city: string; lat: number; lng: number}) {
+    setVenue(r.name);
+    setVenueLat(r.lat);
+    setVenueLng(r.lng);
+    if (r.city) setCity(r.city);
+    setVenueConfirmed(true);
+    setVenueResults([]);
+  }
+
   function handleCoverFile(file: File) {
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
@@ -121,6 +189,41 @@ export default function Home() {
     }
   }
 
+  function resetForm() {
+    setScreenshotImage(null);
+    setScreenshotPopis(null);
+    setScreenshotImagePreview(null);
+    setScreenshotPopisPreview(null);
+    setCoverFile(null);
+    setCoverPreview(null);
+    setCoverSameAsScreenshot(true);
+    setIgUrl('');
+    setTitle('');
+    setDescription('');
+    setDate('');
+    setTime('');
+    setVenue('');
+    setVenueLat(null);
+    setVenueLng(null);
+    setVenueConfirmed(false);
+    setVenueResults([]);
+    setCity('Bratislava');
+    setTags(['zaujimave']);
+    setSlots([{ ...EMPTY_SLOT }]);
+    if (screenshotImageRef.current) screenshotImageRef.current.value = '';
+    if (screenshotPopisRef.current) screenshotPopisRef.current.value = '';
+    if (coverRef.current) coverRef.current.value = '';
+    slotCoverRefs.current.forEach(r => { if (r) r.value = ''; });
+  }
+
+  async function uploadFile(file: File): Promise<string | null> {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
+    const data = await res.json();
+    return data.url ?? null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title) { setError('Zadaj názov eventu'); return; }
@@ -130,59 +233,72 @@ export default function Home() {
 
     try {
       let imageUrl: string | null = null;
-
       const fileToUpload = coverSameAsScreenshot ? screenshotImage : coverFile;
       if (fileToUpload) {
-        const fd = new FormData();
-        fd.append('file', fileToUpload);
-        const upRes = await fetch('/api/upload-image', { method: 'POST', body: fd });
-        const upData = await upRes.json();
-        if (upData.url) {
-          imageUrl = upData.url;
-        } else {
-          setError(`Upload fotky zlyhal: ${upData.error || 'neznáma chyba'}`);
-          return;
-        }
+        imageUrl = await uploadFile(fileToUpload);
+        if (!imageUrl) { setError('Upload fotky zlyhal'); return; }
       }
 
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, igUrl, title, description, date, time, venue, city, tag: tags.join(','), imageUrl }),
+        body: JSON.stringify({ password, igUrl, title, description, date, time, venue, venueLat, venueLng, city, tag: tags.join(','), imageUrl }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || 'Niečo sa pokazilo');
-        return;
-      }
+      if (!res.ok) { setError(data.error || 'Niečo sa pokazilo'); return; }
     } catch (err) {
-      setError(`Chyba: ${err}`);
-      return;
+      setError(`Chyba: ${err}`); return;
     } finally {
       setLoading(false);
     }
 
     setSent(true);
-      setScreenshotImage(null);
-      setScreenshotPopis(null);
-      setScreenshotImagePreview(null);
-      setScreenshotPopisPreview(null);
-      setCoverFile(null);
-      setCoverPreview(null);
-      setCoverSameAsScreenshot(true);
-      setIgUrl('');
-      setTitle('');
-      setDescription('');
-      setDate('');
-      setTime('');
-      setVenue('');
-      setCity('Bratislava');
-      setTags(['zaujimave']);
-      if (screenshotImageRef.current) screenshotImageRef.current.value = '';
-      if (screenshotPopisRef.current) screenshotPopisRef.current.value = '';
-      if (coverRef.current) coverRef.current.value = '';
+    resetForm();
+  }
+
+  async function handleBulkSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title) { setError('Zadaj názov eventu'); return; }
+    const filledSlots = slots.filter(s => s.date);
+    if (filledSlots.length === 0) { setError('Zadaj aspoň jeden dátum'); return; }
+    setLoading(true);
+    setError('');
+    setSent(false);
+    setSentCount(0);
+
+    try {
+      // Upload main cover once
+      let mainImageUrl: string | null = null;
+      const mainFile = coverSameAsScreenshot ? screenshotImage : coverFile;
+      if (mainFile) {
+        mainImageUrl = await uploadFile(mainFile);
+        if (!mainImageUrl) { setError('Upload hlavnej fotky zlyhal'); return; }
+      }
+
+      let count = 0;
+      for (const slot of filledSlots) {
+        let slotImageUrl = mainImageUrl;
+        if (!slot.coverSameAsMain && slot.coverFile) {
+          slotImageUrl = await uploadFile(slot.coverFile) ?? mainImageUrl;
+        }
+        const res = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, igUrl, title, description, date: slot.date, time: slot.time, venue, venueLat, venueLng, city, tag: tags.join(','), imageUrl: slotImageUrl }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(`Termín ${count + 1}: ${data.error || 'chyba'}`); return; }
+        count++;
+        setSentCount(count);
+      }
+    } catch (err) {
+      setError(`Chyba: ${err}`); return;
+    } finally {
+      setLoading(false);
+    }
+
+    setSent(true);
+    resetForm();
   }
 
   const inputClass = "w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white placeholder-[#555] focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]";
@@ -224,7 +340,7 @@ export default function Home() {
       <div className="w-full max-w-[420px]">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-[#C8FF00] flex items-center justify-center flex-shrink-0">
             <span className="text-lg font-black text-black">W</span>
           </div>
@@ -234,7 +350,17 @@ export default function Home() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Mode tabs */}
+        <div className="flex gap-1.5 mb-5 bg-[#141414] rounded-2xl p-1">
+          {(['single', 'bulk'] as const).map(m => (
+            <button key={m} type="button" onClick={() => { setMode(m); setSent(false); setError(''); }}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${mode === m ? 'bg-[#C8FF00] text-black' : 'text-[#555] hover:text-[#888]'}`}>
+              {m === 'single' ? 'Jeden termín' : 'Viac termínov'}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={mode === 'single' ? handleSubmit : handleBulkSubmit} className="space-y-3">
 
           {/* Screenshots */}
           <p className="text-[#555] text-xs uppercase tracking-widest px-1">Screenshoty</p>
@@ -290,15 +416,96 @@ export default function Home() {
             onChange={e => setDescription(e.target.value)} rows={3}
             className="w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white placeholder-[#555] focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] resize-none" />
 
-          <div className="flex gap-2.5">
-            <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              className={`flex-1 ${inputClass}`} />
-            <input type="time" value={time} onChange={e => setTime(e.target.value)}
-              className="w-[110px] bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]" />
-          </div>
+          {mode === 'single' ? (
+            <div className="flex gap-2.5">
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className={`flex-1 ${inputClass}`} />
+              <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                className="w-[110px] bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]" />
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              <p className="text-[#555] text-xs uppercase tracking-widest px-1">Termíny (max 3)</p>
+              {slots.map((slot, i) => (
+                <div key={i} className="bg-[#141414] border border-[#222] rounded-2xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#888] text-xs font-semibold uppercase tracking-wider">Termín {i + 1}</span>
+                    {slots.length > 1 && (
+                      <button type="button" onClick={() => removeSlot(i)}
+                        className="text-[#444] hover:text-red-400 text-xs transition-colors">✕ Odstrániť</button>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <input type="date" value={slot.date} onChange={e => updateSlot(i, { date: e.target.value })}
+                      className={`flex-1 ${inputClass}`} />
+                    <input type="time" value={slot.time} onChange={e => updateSlot(i, { time: e.target.value })}
+                      className="w-[110px] bg-[#0A0A0A] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]" />
+                  </div>
+                  {/* Per-slot photo */}
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <div onClick={() => updateSlot(i, { coverSameAsMain: !slot.coverSameAsMain, coverFile: null, coverPreview: null })}
+                      className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${slot.coverSameAsMain ? 'bg-[#C8FF00] border-[#C8FF00]' : 'border-[#444]'}`}>
+                      {slot.coverSameAsMain && <span className="text-black text-[9px] font-bold leading-none">✓</span>}
+                    </div>
+                    <span className="text-[#666] text-xs">Rovnaká fotka ako hlavná</span>
+                  </label>
+                  {!slot.coverSameAsMain && (
+                    <label className="cursor-pointer block">
+                      <input ref={el => { slotCoverRefs.current[i] = el; }} type="file" accept="image/*" className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) updateSlot(i, { coverFile: f, coverPreview: URL.createObjectURL(f) });
+                        }} />
+                      <div className="bg-[#0A0A0A] border border-dashed border-[#333] rounded-xl py-3 px-3 flex items-center gap-3 hover:border-[#C8FF00]/40 transition-colors">
+                        {slot.coverPreview
+                          ? <img src={slot.coverPreview} alt="" className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+                          : <span className="text-xl">🖼️</span>}
+                        <span className="text-[#555] text-xs">
+                          {slot.coverPreview ? 'Fotka nahraná — zmeň ak treba' : 'Nahraj vlastnú fotku pre tento termín'}
+                        </span>
+                      </div>
+                    </label>
+                  )}
+                  {!slot.coverSameAsMain && slot.coverPreview && (
+                    <div className="rounded-xl overflow-hidden bg-[#0A0A0A] aspect-video">
+                      <img src={slot.coverPreview} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {slots.length < 3 && (
+                <button type="button" onClick={addSlot}
+                  className="w-full border border-dashed border-[#333] rounded-2xl py-3 text-[#555] text-sm hover:border-[#C8FF00]/40 hover:text-[#888] transition-colors">
+                  + Pridať ďalší termín
+                </button>
+              )}
+            </div>
+          )}
 
-          <input type="text" placeholder="Miesto / venue" value={venue}
-            onChange={e => setVenue(e.target.value)} className={inputClass} />
+          <div className="relative">
+            <div className="relative">
+              <input type="text" placeholder="Miesto / venue — začni písať adresu..." value={venue}
+                onChange={e => handleVenueSearch(e.target.value)}
+                className={`${inputClass} ${venueConfirmed ? 'border-[#C8FF00]' : ''}`} />
+              {venueLoading && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#555] text-xs">...</span>}
+              {venueConfirmed && !venueLoading && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C8FF00] text-sm font-bold">✓</span>}
+            </div>
+            {venueConfirmed && <p className="text-[#C8FF00] text-xs px-1 mt-1">📍 Adresa potvrdená — zobrazí sa na mape</p>}
+            {!venueConfirmed && venue.length > 0 && !venueLoading && venueResults.length === 0 && venue.length >= 3 && (
+              <p className="text-[#555] text-xs px-1 mt-1">Žiadne výsledky</p>
+            )}
+            {venueResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-2xl overflow-hidden">
+                {venueResults.map((r, i) => (
+                  <button key={i} type="button" onClick={() => selectVenue(r)}
+                    className="w-full text-left px-4 py-3 hover:bg-[#222] transition-colors border-b border-[#222] last:border-0">
+                    <p className="text-white text-sm font-medium truncate">{r.name}</p>
+                    {r.city && <p className="text-[#555] text-xs">{r.city}</p>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <select value={city} onChange={e => setCity(e.target.value)}
             className="w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
@@ -342,7 +549,9 @@ export default function Home() {
             className={inputClass} />
 
           {/* Cover photo */}
-          <p className="text-[#555] text-xs uppercase tracking-widest px-1 pt-1">Titulná fotka</p>
+          <p className="text-[#555] text-xs uppercase tracking-widest px-1 pt-1">
+            {mode === 'bulk' ? 'Hlavná fotka (zdieľaná)' : 'Titulná fotka'}
+          </p>
 
           <label className="flex items-center gap-3 px-1 cursor-pointer select-none">
             <div onClick={() => setCoverSameAsScreenshot(v => !v)}
@@ -379,14 +588,18 @@ export default function Home() {
           {error && <p className="text-red-400 text-sm px-1">{error}</p>}
           {sent && (
             <div className="bg-[#C8FF00]/10 border border-[#C8FF00]/20 rounded-2xl px-4 py-3 text-[#C8FF00] text-sm text-center">
-              ✓ Poslané — Bruno ho zoberie do 5 minút
+              {mode === 'bulk'
+                ? `✓ Poslané ${sentCount} ${sentCount === 1 ? 'termín' : sentCount < 5 ? 'termíny' : 'termínov'} — Bruno ich zoberie do 5 minút`
+                : '✓ Poslané — Bruno ho zoberie do 5 minút'}
             </div>
           )}
 
           {/* Submit */}
           <button type="submit" disabled={loading || enriching}
             className="w-full bg-[#C8FF00] text-black font-bold py-4 rounded-2xl hover:bg-[#b4e800] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed text-[15px] mt-1">
-            {loading ? 'Posielam...' : 'Poslať do Discordu →'}
+            {loading
+              ? (mode === 'bulk' && sentCount > 0 ? `Posielam ${sentCount + 1}/${slots.filter(s => s.date).length}...` : 'Posielam...')
+              : (mode === 'bulk' ? `Poslať ${slots.filter(s => s.date).length || ''} ${slots.filter(s => s.date).length === 1 ? 'termín' : 'termíny'} →` : 'Poslať do Discordu →')}
           </button>
         </form>
       </div>

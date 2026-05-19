@@ -99,7 +99,8 @@ Return ONLY valid JSON, no explanation.`;
       city: parsed.city ?? 'Bratislava',
       tag: parsed.tag ?? 'zaujimave',
     });
-  } catch {
-    return NextResponse.json({ error: 'GPT failed' }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

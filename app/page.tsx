@@ -131,10 +131,11 @@ export default function Home() {
       if (myId !== enrichIdRef.current) return;
 
       let data: Record<string, string> = {};
+      const rawText = await res.text();
       try {
-        data = await res.json();
+        data = JSON.parse(rawText);
       } catch {
-        setError(`Analýza zlyhala: server error ${res.status}`);
+        setError(`Analýza zlyhala: ${res.status} — ${rawText.slice(0, 120)}`);
         return;
       }
 

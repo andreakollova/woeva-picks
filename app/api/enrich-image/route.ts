@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const VALID_TAGS = ['coffee','party','zapasy','sport','umenie','gaming','conference','priroda','historia','zaujimave'];
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'no openai key' }, { status: 500 });
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
       const mime = file.type || 'image/jpeg';
       return {
         type: 'image_url' as const,
-        image_url: { url: `data:${mime};base64,${base64}`, detail: 'high' as const },
+        image_url: { url: `data:${mime};base64,${base64}`, detail: 'low' as const },
       };
     })
   );

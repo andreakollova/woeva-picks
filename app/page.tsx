@@ -525,9 +525,9 @@ export default function Home() {
               <p className="text-[#555] text-xs px-1 mt-1">Žiadne výsledky</p>
             )}
             {venueResults.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-2xl overflow-hidden">
+              <div className="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-2xl overflow-hidden shadow-xl">
                 {venueResults.map((r, i) => (
-                  <button key={i} type="button" onClick={() => selectVenue(r)}
+                  <button key={i} type="button" onMouseDown={e => { e.preventDefault(); selectVenue(r); }}
                     className="w-full text-left px-4 py-3 hover:bg-[#222] transition-colors border-b border-[#222] last:border-0">
                     <p className="text-white text-sm font-medium truncate">{r.name}</p>
                     {r.city && <p className="text-[#555] text-xs">{r.city}</p>}

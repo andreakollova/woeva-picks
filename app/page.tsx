@@ -35,6 +35,14 @@ const TAGS = [
   { value: 'gaming', label: '🎮 Gaming' },
   { value: 'conference', label: '📋 Konferencia' },
   { value: 'historia', label: '🏛️ História' },
+  { value: 'hudba', label: '🎵 Hudba' },
+  { value: 'tanec', label: '💃 Tanec' },
+  { value: 'running', label: '🏅 Running' },
+  { value: 'film', label: '🎬 Film' },
+  { value: 'jedlo', label: '🍽️ Jedlo' },
+  { value: 'joga', label: '🧘 Joga' },
+  { value: 'tech', label: '💻 Tech' },
+  { value: 'networking', label: '🤝 Networking' },
 ];
 
 type Slot = {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const VALID_TAGS = ['coffee','party','zapasy','sport','umenie','gaming','conference','priroda','historia','zaujimave'];
+const VALID_TAGS = ['coffee','party','zapasy','sport','umenie','gaming','conference','priroda','historia','zaujimave','hudba','tanec','running','film','jedlo','joga','tech','networking'];
 
 export const maxDuration = 60;
 
@@ -50,7 +50,7 @@ Return a JSON object:
 - "time": event start time as HH:MM (24h), or ""
 - "venue": venue or location name, or ""
 - "city": city name (e.g. Bratislava, Košice, Nitra, Vienna, Prague, London), or "Bratislava"
-- "tag": one of exactly: coffee, party, zapasy, sport, umenie, gaming, conference, priroda, historia, zaujimave
+- "tag": one of exactly: coffee, party, zapasy, sport, umenie, gaming, conference, priroda, historia, zaujimave, hudba, tanec, running, film, jedlo, joga, tech, networking
 
 Return ONLY valid JSON, no explanation.`;
 

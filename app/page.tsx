@@ -472,9 +472,8 @@ export default function Home() {
                       className="w-[110px] bg-[#0A0A0A] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px]" />
                   </div>
                   {/* Per-slot photo */}
-                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                    <div onClick={() => updateSlot(i, { coverSameAsMain: !slot.coverSameAsMain, coverFile: null, coverPreview: null })}
-                      className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${slot.coverSameAsMain ? 'bg-[#C8FF00] border-[#C8FF00]' : 'border-[#444]'}`}>
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none" onClick={() => updateSlot(i, { coverSameAsMain: !slot.coverSameAsMain, coverFile: null, coverPreview: null })}>
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${slot.coverSameAsMain ? 'bg-[#C8FF00] border-[#C8FF00]' : 'border-[#444]'}`}>
                       {slot.coverSameAsMain && <span className="text-black text-[9px] font-bold leading-none">✓</span>}
                     </div>
                     <span className="text-[#666] text-xs">Rovnaká fotka ako hlavná</span>
@@ -583,9 +582,8 @@ export default function Home() {
             {mode === 'bulk' ? 'Hlavná fotka (zdieľaná)' : 'Titulná fotka'}
           </p>
 
-          <label className="flex items-center gap-3 px-1 cursor-pointer select-none">
-            <div onClick={() => setCoverSameAsScreenshot(v => !v)}
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${coverSameAsScreenshot ? 'bg-[#C8FF00] border-[#C8FF00]' : 'border-[#444]'}`}>
+          <label className="flex items-center gap-3 px-1 cursor-pointer select-none" onClick={() => setCoverSameAsScreenshot(v => !v)}>
+            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${coverSameAsScreenshot ? 'bg-[#C8FF00] border-[#C8FF00]' : 'border-[#444]'}`}>
               {coverSameAsScreenshot && <span className="text-black text-xs font-bold">✓</span>}
             </div>
             <span className="text-[#888] text-sm">Rovnaká ako screenshot obrazku</span>

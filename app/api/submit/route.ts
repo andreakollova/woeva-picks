@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
         source: 'instagram',
         title: title.trim(),
         description: description || '',
-        tag: tag || 'zaujimave',
+        tag: tag || 'Community & Belonging',
         date: date || null,
         time_start: time || null,
         venue: venue || null,

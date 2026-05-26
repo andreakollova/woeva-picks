@@ -25,24 +25,13 @@ async function compressImage(file: File, maxPx = 1200, quality = 0.82): Promise<
 
 const CITIES = ['Bratislava', 'Košice', 'Nitra', 'Vienna', 'Prague', 'London'];
 const TAGS = [
-  { value: 'zaujimave', label: '✨ Zaujímavé' },
-  { value: 'party', label: '🎉 Party' },
-  { value: 'sport', label: '🏃 Šport' },
-  { value: 'zapasy', label: '🏆 Zápasy' },
-  { value: 'umenie', label: '🎨 Umenie' },
-  { value: 'coffee', label: '☕ Coffee' },
-  { value: 'priroda', label: '🌿 Príroda' },
-  { value: 'gaming', label: '🎮 Gaming' },
-  { value: 'conference', label: '📋 Konferencia' },
-  { value: 'historia', label: '🏛️ História' },
-  { value: 'hudba', label: '🎵 Hudba' },
-  { value: 'tanec', label: '💃 Tanec' },
-  { value: 'running', label: '🏅 Running' },
-  { value: 'film', label: '🎬 Film' },
-  { value: 'jedlo', label: '🍽️ Jedlo' },
-  { value: 'joga', label: '🧘 Joga' },
-  { value: 'tech', label: '💻 Tech' },
-  { value: 'networking', label: '🤝 Networking' },
+  { value: 'Movement & Sport',      label: 'Pohyb & Šport' },
+  { value: 'Wellness & Body',       label: 'Wellness & Telo' },
+  { value: 'Food & Drinks',         label: 'Jedlo & Pitie' },
+  { value: 'Art & Creation',        label: 'Umenie & Tvorba' },
+  { value: 'Music & Nightlife',     label: 'Hudba & Nightlife' },
+  { value: 'Learning & Mind',       label: 'Učenie & Myseľ' },
+  { value: 'Community & Belonging', label: 'Komunita & Spolupatričnosť' },
 ];
 
 type Slot = {
@@ -82,7 +71,7 @@ export default function Home() {
   const [venueLoading, setVenueLoading] = useState(false);
   const venueDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [city, setCity] = useState('Bratislava');
-  const [tags, setTags] = useState<string[]>(['zaujimave']);
+  const [tags, setTags] = useState<string[]>(['Community & Belonging']);
   const [price, setPrice] = useState<'Zadarmo' | 'Platba na mieste'>('Zadarmo');
 
   // Bulk mode — up to 3 slots
@@ -127,7 +116,7 @@ export default function Home() {
     setTime('');
     setVenue('');
     setCity('Bratislava');
-    setTags(['zaujimave']);
+    setTags(['Community & Belonging']);
     setEnriching(true);
 
     try {
@@ -247,7 +236,7 @@ export default function Home() {
     setVenueConfirmed(false);
     setVenueResults([]);
     setCity('Bratislava');
-    setTags(['zaujimave']);
+    setTags(['Community & Belonging']);
     setPrice('Zadarmo');
     setSlots([{ ...EMPTY_SLOT }]);
     if (screenshotImageRef.current) screenshotImageRef.current.value = '';
@@ -551,28 +540,18 @@ export default function Home() {
             {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
-          {/* Tags — max 3, chip multiselect */}
+          {/* Category — single select */}
           <div className="flex flex-wrap gap-2">
             {TAGS.map(t => {
               const selected = tags.includes(t.value);
-              const disabled = !selected && tags.length >= 3;
               return (
                 <button
                   key={t.value}
                   type="button"
-                  disabled={disabled}
-                  onClick={() => {
-                    if (selected) {
-                      setTags(tags.filter(x => x !== t.value));
-                    } else if (tags.length < 3) {
-                      setTags([...tags, t.value]);
-                    }
-                  }}
+                  onClick={() => setTags([t.value])}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                     selected
                       ? 'bg-[#C8FF00] text-black border-[#C8FF00]'
-                      : disabled
-                      ? 'bg-transparent text-[#333] border-[#222] cursor-not-allowed'
                       : 'bg-transparent text-[#666] border-[#2a2a2a] hover:border-[#555] hover:text-[#aaa]'
                   }`}
                 >
@@ -581,7 +560,6 @@ export default function Home() {
               );
             })}
           </div>
-          <p className="text-[#444] text-xs px-1">Max 3 tagy — GPT vyberie prvý automaticky</p>
 
           {/* Price */}
           <p className="text-[#555] text-xs uppercase tracking-widest px-1 pt-1">Vstupné</p>

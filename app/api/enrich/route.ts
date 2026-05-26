@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const VALID_TAGS = ['coffee','party','zapasy','sport','umenie','gaming','conference','priroda','historia','zaujimave'];
+const VALID_TAGS = ['Movement & Sport','Wellness & Body','Food & Drinks','Art & Creation','Music & Nightlife','Learning & Mind','Community & Belonging'];
 
 async function fetchPageMeta(url: string): Promise<{ title: string; description: string; imageUrl: string | null }> {
   const res = await fetch(url, {
@@ -63,7 +63,7 @@ Return a JSON object:
 - "time": event start time as HH:MM (24h), or ""
 - "venue": venue or location name, or ""
 - "city": city name (e.g. Bratislava, Košice, Nitra, Vienna, Prague, London), or "Bratislava"
-- "tag": one of exactly: coffee, party, zapasy, sport, umenie, gaming, conference, priroda, historia, zaujimave
+- "tag": one of exactly: Movement & Sport, Wellness & Body, Food & Drinks, Art & Creation, Music & Nightlife, Learning & Mind, Community & Belonging
 
 Return ONLY valid JSON, no explanation.`;
 
@@ -90,7 +90,7 @@ Return ONLY valid JSON, no explanation.`;
     const content = gptData.choices?.[0]?.message?.content ?? '{}';
     const parsed = JSON.parse(content);
 
-    if (!VALID_TAGS.includes(parsed.tag)) parsed.tag = 'zaujimave';
+    if (!VALID_TAGS.includes(parsed.tag)) parsed.tag = 'Community & Belonging';
 
     return NextResponse.json({
       title: parsed.title ?? meta.title ?? '',
@@ -99,7 +99,7 @@ Return ONLY valid JSON, no explanation.`;
       time: parsed.time ?? '',
       venue: parsed.venue ?? '',
       city: parsed.city ?? 'Bratislava',
-      tag: parsed.tag ?? 'zaujimave',
+      tag: parsed.tag ?? 'Community & Belonging',
       imageUrl: meta.imageUrl,
     });
   } catch (e) {
@@ -111,7 +111,7 @@ Return ONLY valid JSON, no explanation.`;
       time: '',
       venue: '',
       city: 'Bratislava',
-      tag: 'zaujimave',
+      tag: 'Community & Belonging',
       imageUrl: meta.imageUrl,
     });
   }

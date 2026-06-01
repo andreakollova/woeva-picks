@@ -79,6 +79,7 @@ export default function Home() {
   const slotCoverRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [enriching, setEnriching] = useState(false);
+  const [tagManuallySet, setTagManuallySet] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
@@ -123,7 +124,7 @@ export default function Home() {
       const compressed = await Promise.all(files.map(f => compressImage(f)));
       const fd = new FormData();
       compressed.forEach(f => fd.append('images', f));
-      const res = await fetch('/api/enrich-image', { method: 'POST', body: fd });
+      const res = await fetch('/api/enrich-image', { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) });
 
       // Discard stale response if a newer enrichment was triggered
       if (myId !== enrichIdRef.current) return;
@@ -148,7 +149,7 @@ export default function Home() {
       if (data.time) setTime(data.time);
       if (data.venue) setVenue(data.venue);
       if (data.city) setCity(data.city);
-      if (data.tag) setTags([data.tag]);
+      if (data.tag && !tagManuallySet) setTags([data.tag]);
     } catch (err: unknown) {
       if (myId === enrichIdRef.current) setError('Analýza zlyhala: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
@@ -237,6 +238,7 @@ export default function Home() {
     setVenueResults([]);
     setCity('Bratislava');
     setTags(['Community & Belonging']);
+    setTagManuallySet(false);
     setPrice('Zadarmo');
     setSlots([{ ...EMPTY_SLOT }]);
     if (screenshotImageRef.current) screenshotImageRef.current.value = '';
@@ -540,7 +542,11 @@ export default function Home() {
             {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
-          {/* Category — single select */}
+          {/* Category — multi select 1–3 */}
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[#555] text-xs uppercase tracking-widest">Kategórie</p>
+            <p className="text-[#444] text-xs">{tags.length}/3</p>
+          </div>
           <div className="flex flex-wrap gap-2">
             {TAGS.map(t => {
               const selected = tags.includes(t.value);
@@ -548,7 +554,17 @@ export default function Home() {
                 <button
                   key={t.value}
                   type="button"
-                  onClick={() => setTags([t.value])}
+                  onClick={() => {
+                    setTagManuallySet(true);
+                    setTags(prev => {
+                      if (prev.includes(t.value)) {
+                        if (prev.length === 1) return prev; // keep at least 1
+                        return prev.filter(v => v !== t.value);
+                      }
+                      if (prev.length >= 3) return prev;
+                      return [...prev, t.value];
+                    });
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
                     selected
                       ? 'bg-[#C8FF00] text-black border-[#C8FF00]'
@@ -608,6 +624,38 @@ export default function Home() {
           {coverDisplayPreview && (
             <div className="rounded-2xl overflow-hidden bg-[#141414] aspect-video">
               <img src={coverDisplayPreview} alt="cover" className="w-full h-full object-cover" />
+            </div>
+          )}
+
+          {/* Live preview */}
+          {(title || coverDisplayPreview) && (
+            <div className="mt-2 bg-[#141414] border border-[#222] rounded-2xl overflow-hidden">
+              {coverDisplayPreview && (
+                <div className="aspect-video w-full relative">
+                  <img src={coverDisplayPreview} alt="cover" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                </div>
+              )}
+              <div className="p-4 space-y-2.5">
+                {title && <p className="text-white font-bold text-base leading-snug">{title}</p>}
+                <div className="flex items-center gap-2 text-[#666] text-xs">
+                  {date && <span>{date}</span>}
+                  {time && <><span>·</span><span>{time}</span></>}
+                  {city && <><span>·</span><span>{city}</span></>}
+                </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map(tag => {
+                      const label = TAGS.find(t => t.value === tag)?.label ?? tag;
+                      return (
+                        <span key={tag} className="px-2.5 py-1 bg-[#C8FF00]/10 text-[#C8FF00] text-xs font-semibold rounded-lg border border-[#C8FF00]/20">
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

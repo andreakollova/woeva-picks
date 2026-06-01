@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         source_url: igUrl || `picks:${crypto.randomUUID()}`,
-        source: 'instagram',
+        source: 'woeva_picks',
         title: title.trim(),
         description: description || '',
         tag: tag || 'Community & Belonging',

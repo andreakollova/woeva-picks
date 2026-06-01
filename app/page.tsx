@@ -78,6 +78,7 @@ export default function Home() {
   const [slots, setSlots] = useState<Slot[]>([{ ...EMPTY_SLOT }]);
   const slotCoverRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const [cityOpen, setCityOpen] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [tagManuallySet, setTagManuallySet] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -537,10 +538,35 @@ export default function Home() {
             )}
           </div>
 
-          <select value={city} onChange={e => setCity(e.target.value)}
-            className="w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[#C8FF00] transition-colors text-[15px] appearance-none">
-            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setCityOpen(o => !o)}
+              className="w-full bg-[#141414] border border-[#222] rounded-2xl px-4 py-3.5 text-white text-[15px] text-left flex items-center justify-between hover:border-[#C8FF00]/40 transition-colors"
+            >
+              <span>{city}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className={`transition-transform ${cityOpen ? 'rotate-180' : ''}`}>
+                <path d="M6 9l6 6 6-6" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {cityOpen && (
+              <div className="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden shadow-xl">
+                {CITIES.map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); setCity(c); setCityOpen(false); }}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#222] transition-colors border-b border-[#222] last:border-0"
+                  >
+                    <span className={`text-[15px] ${city === c ? 'text-white font-semibold' : 'text-[#888]'}`}>{c}</span>
+                    {city === c && (
+                      <span className="w-5 h-5 rounded-full bg-[#C8FF00] flex items-center justify-center flex-shrink-0 text-[10px] font-black text-black leading-none">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Category — multi select 1–3 */}
           <div className="flex items-center justify-between px-1">

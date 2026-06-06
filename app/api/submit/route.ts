@@ -53,7 +53,6 @@ export async function POST(req: NextRequest) {
         country: 'SK',
         photo_url: photoUrl,
         price: price === 'Platba na mieste' ? (parseFloat(priceAmount) || 0) : 0,
-        pay_at_door: price === 'Platba na mieste',
         scraped_at: new Date().toISOString(),
         discord_sent: false,
         approved: false,

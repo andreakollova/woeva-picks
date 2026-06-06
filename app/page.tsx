@@ -344,8 +344,8 @@ export default function Home() {
       <main className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-5">
         <div className="w-full max-w-[360px]">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#C8FF00] mb-5">
-              <span className="text-2xl font-black text-black">W</span>
+            <div className="flex justify-center mb-5">
+              <img src="/logo.png" alt="Woeva" className="h-12 w-auto" />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Woeva Picks</h1>
             <p className="text-[#555] text-sm mt-1">Admin prístup</p>
@@ -375,9 +375,7 @@ export default function Home() {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-[#C8FF00] flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-black text-black">W</span>
-          </div>
+          <img src="/logo.png" alt="Woeva" className="h-8 w-auto flex-shrink-0" />
           <div>
             <h1 className="text-lg font-bold text-white leading-tight">Woeva Picks</h1>
             <p className="text-[#555] text-xs">Pridaj event</p>

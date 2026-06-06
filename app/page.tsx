@@ -375,7 +375,7 @@ export default function Home() {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <img src="/logo.png" alt="Woeva" className="h-8 w-auto flex-shrink-0" />
+          <img src="/logo.png" alt="Woeva" className="h-12 w-auto flex-shrink-0" />
           <div>
             <h1 className="text-lg font-bold text-white leading-tight">Woeva Picks</h1>
             <p className="text-[#555] text-xs">Pridaj event</p>

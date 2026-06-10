@@ -374,12 +374,8 @@ export default function Home() {
       <div className="w-full max-w-[420px]">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <img src="/logo.png" alt="Woeva" className="h-12 w-auto flex-shrink-0" />
-          <div>
-            <h1 className="text-lg font-bold text-white leading-tight">Woeva Picks</h1>
-            <p className="text-[#555] text-xs">Pridaj event</p>
-          </div>
+        <div className="flex items-center mb-6">
+          <img src="/logo.png" alt="Woeva" className="h-12 w-auto" />
         </div>
 
         {/* Mode tabs */}
@@ -406,8 +402,8 @@ export default function Home() {
                   <img src={screenshotImagePreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <>
-                    <span className="text-2xl">🖼️</span>
-                    <span className="text-[#555] text-xs text-center px-2">Screenshot<br />obrazku</span>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-[#444]"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="1.5"/><path d="M9 5l1.5-2h3L15 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    <span className="text-[#555] text-xs text-center px-2">Foto<br />eventu</span>
                   </>
                 )}
               </div>
@@ -422,8 +418,8 @@ export default function Home() {
                   <img src={screenshotPopisPreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <>
-                    <span className="text-2xl">📝</span>
-                    <span className="text-[#555] text-xs text-center px-2">Screenshot<br />popisu</span>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-[#444]"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    <span className="text-[#555] text-xs text-center px-2">Popis<br />eventu</span>
                   </>
                 )}
               </div>

@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   // Batch-fetch profiles
   const userIds = [...new Set(rows.map((r: any) => r.user_id))] as string[];
-  const { data: profiles } = await db.from('profiles').select('id, name, email').in('id', userIds);
+  const { data: profiles } = await db.from('profiles').select('id, name, email, avatar_url').in('id', userIds);
   const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
   const zip = new JSZip();
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   await Promise.all(rows.map(async (row: any) => {
     const profile = profileMap.get(row.user_id);
     const email = profile?.email ?? '';
-    if (email.endsWith('@woeva.internal')) return;
+    if (email.endsWith('@woeva.internal') || (profile?.avatar_url ?? '').includes('/bots/') || (!email && !profile?.avatar_url && !profile?.email)) return;
 
     const seq = parseInt(row.id.replace(/-/g, '').slice(0, 8), 16) % 9999 + 1;
     const eventYear = new Date(row.events.date + 'T00:00:00').getFullYear();

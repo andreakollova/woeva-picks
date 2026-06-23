@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   // Batch-fetch profiles in one query
   const userIds = [...new Set((rows ?? []).map((r: any) => r.user_id))] as string[];
   const { data: profiles } = userIds.length
-    ? await db.from('profiles').select('id, name, email').in('id', userIds)
+    ? await db.from('profiles').select('id, name, email, avatar_url').in('id', userIds)
     : { data: [] };
   const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
     .map((row: any) => {
       const profile = profileMap.get(row.user_id);
       const email = profile?.email ?? '';
-      if (email.endsWith('@woeva.internal')) return null;
+      // Filter bots: email contains @woeva.internal OR avatar in /bots/ OR no email+no avatar (ghost bot)
+      if (email.endsWith('@woeva.internal') || (profile?.avatar_url ?? '').includes('/bots/') || (!email && !profile?.avatar_url && !profile?.email)) return null;
       return {
         id: row.id,
         user_id: row.user_id,

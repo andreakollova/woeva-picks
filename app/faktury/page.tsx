@@ -139,7 +139,7 @@ export default function FakturyPage() {
     setDownloading(inv.id);
     const url = `/api/admin-invoice?secret=${encodeURIComponent(PASSWORD)}&attendee_id=${inv.id}`;
     const r = await fetch(url);
-    if (!r.ok) { alert('Chyba pri generovaní PDF'); setDownloading(null); return; }
+    if (!r.ok) { const errText = await r.text().catch(() => ''); alert(`Chyba: ${errText || r.status}`); setDownloading(null); return; }
     const blob = await r.blob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -165,7 +165,7 @@ export default function FakturyPage() {
     setDownloading(`c-${inv.id}`);
     const url = `/api/admin-creator-invoice?secret=${encodeURIComponent(PASSWORD)}&invoice_id=${inv.id}`;
     const r = await fetch(url);
-    if (!r.ok) { alert('Chyba pri generovaní PDF'); setDownloading(null); return; }
+    if (!r.ok) { const errText = await r.text().catch(() => ''); alert(`Chyba: ${errText || r.status}`); setDownloading(null); return; }
     const blob = await r.blob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

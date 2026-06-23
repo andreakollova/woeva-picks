@@ -134,16 +134,22 @@ export async function GET(req: NextRequest) {
 
   const { data: profile } = await db.from('profiles').select('name, email').eq('id', row.user_id).single();
 
-  const pdf = await generateInvoicePdf({
-    eventTitle: row.events.title,
-    eventDate: row.events.date,
-    eventVenue: row.events.venue,
-    eventCity: row.events.city,
-    amount: row.events.price ?? 0,
-    attendeeName: profile?.name ?? 'Účastník',
-    attendeeEmail: profile?.email ?? '',
-    attendeeId: row.id,
-  });
+  let pdf: Buffer;
+  try {
+    pdf = await generateInvoicePdf({
+      eventTitle: row.events.title,
+      eventDate: row.events.date,
+      eventVenue: row.events.venue,
+      eventCity: row.events.city,
+      amount: row.events.price ?? 0,
+      attendeeName: profile?.name ?? 'Účastník',
+      attendeeEmail: profile?.email ?? '',
+      attendeeId: row.id,
+    });
+  } catch (err: any) {
+    console.error('PDF generation error:', err);
+    return new NextResponse(`PDF error: ${err?.message ?? String(err)}`, { status: 500 });
+  }
 
   const year = new Date(row.events.date + 'T00:00:00').getFullYear();
   const seq = parseInt(row.id.replace(/-/g, '').slice(0, 8), 16) % 9999 + 1;

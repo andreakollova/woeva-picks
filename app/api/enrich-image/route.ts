@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const VALID_TAGS = ['coffee','party','zapasy','sport','umenie','gaming','conference','priroda','historia','zaujimave','hudba','tanec','running','film','jedlo','joga','tech','networking'];
+const VALID_TAGS = ['Movement & Sport','Wellness & Body','Food & Drinks','Art & Creation','Music & Nightlife','Learning & Mind','Community & Belonging'];
 
 export const maxDuration = 60;
 
@@ -50,7 +50,7 @@ Return a JSON object:
 - "time": event start time as HH:MM (24h), or ""
 - "venue": venue or location name, or ""
 - "city": city name (e.g. Bratislava, Košice, Nitra, Vienna, Prague, London), or "Bratislava"
-- "tag": one of exactly: coffee, party, zapasy, sport, umenie, gaming, conference, priroda, historia, zaujimave, hudba, tanec, running, film, jedlo, joga, tech, networking
+- "tag": one of exactly: Movement & Sport, Wellness & Body, Food & Drinks, Art & Creation, Music & Nightlife, Learning & Mind, Community & Belonging
 
 Return ONLY valid JSON, no explanation.`;
 
@@ -82,7 +82,7 @@ Return ONLY valid JSON, no explanation.`;
     const content = gptData.choices?.[0]?.message?.content ?? '{}';
     const parsed = JSON.parse(content);
 
-    if (!VALID_TAGS.includes(parsed.tag)) parsed.tag = 'zaujimave';
+    if (!VALID_TAGS.includes(parsed.tag)) parsed.tag = 'Community & Belonging';
 
     const organizer = (parsed.organizer ?? '').trim();
     const rawTitle = (parsed.title ?? '').trim();
@@ -97,7 +97,7 @@ Return ONLY valid JSON, no explanation.`;
       time: parsed.time ?? '',
       venue: parsed.venue ?? '',
       city: parsed.city ?? 'Bratislava',
-      tag: parsed.tag ?? 'zaujimave',
+      tag: parsed.tag ?? 'Community & Belonging',
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

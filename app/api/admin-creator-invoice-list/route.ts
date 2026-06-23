@@ -18,17 +18,20 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const invoices = await Promise.all((rows ?? []).map(async (row: any) => {
-    const [{ data: profile }, { data: authData }] = await Promise.all([
-      db.from('profiles').select('name').eq('id', row.creator_id).single(),
-      db.auth.admin.getUserById(row.creator_id),
-    ]);
+  const creatorIds = [...new Set((rows ?? []).map((r: any) => r.creator_id))] as string[];
+  const { data: profiles } = creatorIds.length
+    ? await db.from('profiles').select('id, name, email').in('id', creatorIds)
+    : { data: [] };
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+
+  const invoices = (rows ?? []).map((row: any) => {
+    const profile = profileMap.get(row.creator_id);
     return {
       ...row,
-      creatorName: profile?.name ?? authData?.user?.email ?? 'Creator',
-      creatorEmail: authData?.user?.email ?? '',
+      creatorName: profile?.name ?? 'Creator',
+      creatorEmail: profile?.email ?? '',
     };
-  }));
+  });
 
   return NextResponse.json({ invoices });
 }

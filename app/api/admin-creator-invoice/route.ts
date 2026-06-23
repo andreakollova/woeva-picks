@@ -133,13 +133,10 @@ export async function GET(req: NextRequest) {
 
   if (!invoice) return new NextResponse('Not found', { status: 404 });
 
-  const [{ data: profile }, { data: authData }] = await Promise.all([
-    db.from('profiles').select('name').eq('id', invoice.creator_id).single(),
-    db.auth.admin.getUserById(invoice.creator_id),
-  ]);
+  const { data: profile } = await db.from('profiles').select('name, email').eq('id', invoice.creator_id).single();
 
-  const creatorName = profile?.name ?? authData?.user?.email ?? 'Creator';
-  const creatorEmail = authData?.user?.email ?? '';
+  const creatorName = profile?.name ?? 'Creator';
+  const creatorEmail = profile?.email ?? '';
 
   const pdf = await generateCreatorInvoicePdf(invoice, creatorName, creatorEmail);
 

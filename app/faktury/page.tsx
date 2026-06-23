@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
-const PASSWORD = process.env.NEXT_PUBLIC_FAKTURY_PASSWORD ?? '';
-const HINT = process.env.NEXT_PUBLIC_FAKTURY_HINT ?? '';
+const PASSWORD = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '';
+const HINT = 'hokej';
 
 type CustomerInvoice = {
   id: string;

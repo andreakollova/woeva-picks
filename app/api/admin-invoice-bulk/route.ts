@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     .select('id, user_id, events!inner(title, date, venue, city, price)')
     .eq('paid', true)
     .gt('events.price', 0)
+    .not('payment_intent_id', 'is', null)
     .gte('created_at', `${startDate}T00:00:00`)
     .lt('created_at', `${endDate}T00:00:00`) as any;
 

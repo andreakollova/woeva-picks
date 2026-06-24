@@ -19,9 +19,10 @@ export async function GET(req: NextRequest) {
 
   const { data: rows, error } = await db
     .from('event_attendees')
-    .select('id, user_id, created_at, events!inner(title, date, price)')
+    .select('id, user_id, created_at, payment_intent_id, events!inner(title, date, price)')
     .eq('paid', true)
     .gt('events.price', 0)
+    .not('payment_intent_id', 'is', null)
     .order('created_at', { ascending: false }) as any;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -38,13 +38,18 @@ export async function generateInvoicePdf(params: {
   const location = [eventVenue, eventCity].filter(Boolean).join(', ');
 
   const assetsDir = path.join(process.cwd(), 'pass-assets');
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  const regularPath = path.join(assetsDir, 'Inter-Regular.ttf');
+  const boldPath = path.join(assetsDir, 'Inter-Bold.ttf');
+
+  // autoFirstPage:false prevents PDFKit from loading Helvetica.afm (missing on Vercel)
+  const doc = new PDFDocument({ size: 'A4', margin: 50, autoFirstPage: false, font: regularPath });
+  doc.registerFont('Regular', regularPath);
+  doc.registerFont('Bold', boldPath);
+  doc.addPage();
+
   const buffers: Buffer[] = [];
   doc.on('data', (chunk: Buffer) => buffers.push(chunk));
 
-  // Register custom TTF fonts (pdfkit built-in Helvetica needs .afm files missing on Vercel)
-  doc.registerFont('Regular', path.join(assetsDir, 'Inter-Regular.ttf'));
-  doc.registerFont('Bold', path.join(assetsDir, 'Inter-Bold.ttf'));
   const Regular = 'Regular';
   const Bold = 'Bold';
 

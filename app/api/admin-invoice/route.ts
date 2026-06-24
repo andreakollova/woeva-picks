@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 
 export const runtime = 'nodejs';
 
@@ -35,12 +37,12 @@ export async function generateInvoicePdf(params: {
   const deliveryDate = eventDate ? formatDate(eventDate) : issueDate;
   const location = [eventVenue, eventCity].filter(Boolean).join(', ');
 
-  const path = require('path');
   const assetsDir = path.join(process.cwd(), 'pass-assets');
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const buffers: Buffer[] = [];
   doc.on('data', (chunk: Buffer) => buffers.push(chunk));
 
+  // Register custom TTF fonts (pdfkit built-in Helvetica needs .afm files missing on Vercel)
   doc.registerFont('Regular', path.join(assetsDir, 'Inter-Regular.ttf'));
   doc.registerFont('Bold', path.join(assetsDir, 'Inter-Bold.ttf'));
   const Regular = 'Regular';

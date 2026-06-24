@@ -65,10 +65,10 @@ export async function generateInvoicePdf(params: {
   doc.font(Bold).fontSize(24).fillColor(BLACK).text('FAKTÚRA', 50, 52, { align: 'right', width: W });
 
   let y = 90;
-  doc.font(Regular).fontSize(9).fillColor(GRAY).text('Dátum vystavenia:', 50, y, { continued: true, width: 130 });
+  doc.font(Regular).fontSize(8).fillColor(GRAY).text('Dátum vystavenia:', 50, y, { continued: true, width: 300 });
   doc.font(Regular).fillColor(BLACK).text(` ${issueDate}`);
-  y += 14;
-  doc.font(Regular).fillColor(GRAY).text('Dátum dodania:', 50, y, { continued: true, width: 130 });
+  y += 13;
+  doc.font(Regular).fillColor(GRAY).text('Dátum dodania:', 50, y, { continued: true, width: 300 });
   doc.font(Regular).fillColor(BLACK).text(` ${deliveryDate}`);
 
   y += 24;
@@ -93,7 +93,7 @@ export async function generateInvoicePdf(params: {
 
   const tableY = y + 100;
   doc.rect(50, tableY, W, 26).fill(BLACK);
-  doc.font(Bold).fontSize(8.5).fillColor('#FFFFFF');
+  doc.font(Bold).fontSize(6.5).fillColor('#FFFFFF');
   doc.text('POLOŽKA', 60, tableY + 9, { width: 210 });
   doc.text('ZÁK. DPH', 270, tableY + 9, { width: 80, align: 'right' });
   doc.text('SADZBA', 350, tableY + 9, { width: 55, align: 'right' });

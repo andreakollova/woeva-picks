@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 function buildInvoiceNumber(id: string, eventDate: string) {
   const seq = parseInt(id.replace(/-/g, '').slice(0, 8), 16) % 9999 + 1;
   const year = new Date(eventDate + 'T00:00:00').getFullYear();
-  return `WOEVA-${year}-${String(seq).padStart(4, '0')}`;
+  return `WO${year}${String(seq).padStart(5, '0')}`;
 }
 
 export async function GET(req: NextRequest) {

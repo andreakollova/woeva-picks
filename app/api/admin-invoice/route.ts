@@ -32,7 +32,7 @@ export async function generateInvoicePdf(params: {
   const vatAmount = Math.round((amount - vatBase) * 100) / 100;
   const year = new Date().getFullYear();
   const seq = parseInt(attendeeId.replace(/-/g, '').slice(0, 8), 16) % 9999 + 1;
-  const invoiceNumber = `WOEVA-${year}-${String(seq).padStart(4, '0')}`;
+  const invoiceNumber = `WO${year}${String(seq).padStart(5, '0')}`;
   const issueDate = new Date().toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' });
   const deliveryDate = eventDate ? formatDate(eventDate) : issueDate;
   const location = [eventVenue, eventCity].filter(Boolean).join(', ');
@@ -55,13 +55,17 @@ export async function generateInvoicePdf(params: {
 
   const W = 495;
   const BLACK = '#0A0A0A', GRAY = '#888888', LIGHT = '#F7F7F7', LIME = '#B9FF00';
-  doc.font(Bold).fontSize(24).fillColor(BLACK).text('FAKTÚRA', 50, 44, { align: 'right', width: W });
 
-  let y = 96;
-  doc.font(Regular).fontSize(9).fillColor(GRAY).text('Číslo faktúry:', 50, y, { continued: true, width: 130 });
-  doc.font(Bold).fillColor(BLACK).text(` ${invoiceNumber}`);
-  y += 14;
-  doc.font(Regular).fillColor(GRAY).text('Dátum vystavenia:', 50, y, { continued: true, width: 130 });
+  // Logo
+  const logoPath = path.join(assetsDir, 'logo@2x.png');
+  if (fs.existsSync(logoPath)) doc.image(logoPath, 50, 38, { height: 24 });
+
+  // Invoice number + FAKTÚRA header
+  doc.font(Bold).fontSize(10).fillColor(GRAY).text(invoiceNumber, 50, 38, { align: 'right', width: W });
+  doc.font(Bold).fontSize(24).fillColor(BLACK).text('FAKTÚRA', 50, 52, { align: 'right', width: W });
+
+  let y = 90;
+  doc.font(Regular).fontSize(9).fillColor(GRAY).text('Dátum vystavenia:', 50, y, { continued: true, width: 130 });
   doc.font(Regular).fillColor(BLACK).text(` ${issueDate}`);
   y += 14;
   doc.font(Regular).fillColor(GRAY).text('Dátum dodania:', 50, y, { continued: true, width: 130 });
@@ -85,7 +89,7 @@ export async function generateInvoicePdf(params: {
   doc.text(`DIČ: ${SELLER.dic}`, 50, y + 43, { width: colW });
   doc.text(`IČ DPH: ${SELLER.icdph}`, 50, y + 56, { width: colW });
   doc.font(Regular).fontSize(8).fillColor(GRAY).text(SELLER.icdphNote, 50, y + 69, { width: colW });
-  doc.font(Regular).fontSize(9).fillColor(BLACK).text(attendeeEmail, 50 + colW + 20, y, { width: colW });
+  if (attendeeEmail) doc.font(Regular).fontSize(9).fillColor(GRAY).text(attendeeEmail, 50 + colW + 20, y, { width: colW });
 
   const tableY = y + 100;
   doc.rect(50, tableY, W, 26).fill(BLACK);
@@ -163,7 +167,7 @@ export async function GET(req: NextRequest) {
 
   const year = new Date(row.events.date + 'T00:00:00').getFullYear();
   const seq = parseInt(row.id.replace(/-/g, '').slice(0, 8), 16) % 9999 + 1;
-  const invoiceNumber = `WOEVA-${year}-${String(seq).padStart(4, '0')}`;
+  const invoiceNumber = `WO${year}${String(seq).padStart(5, '0')}`;
 
   return new NextResponse(new Uint8Array(pdf), {
     headers: {

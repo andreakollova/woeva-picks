@@ -35,13 +35,16 @@ export async function generateInvoicePdf(params: {
   const deliveryDate = eventDate ? formatDate(eventDate) : issueDate;
   const location = [eventVenue, eventCity].filter(Boolean).join(', ');
 
+  const path = require('path');
+  const assetsDir = path.join(process.cwd(), 'pass-assets');
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
   const buffers: Buffer[] = [];
   doc.on('data', (chunk: Buffer) => buffers.push(chunk));
 
-  // Use pdfkit built-in Helvetica fonts (no external files needed)
-  const Regular = 'Helvetica';
-  const Bold = 'Helvetica-Bold';
+  doc.registerFont('Regular', path.join(assetsDir, 'Inter-Regular.ttf'));
+  doc.registerFont('Bold', path.join(assetsDir, 'Inter-Bold.ttf'));
+  const Regular = 'Regular';
+  const Bold = 'Bold';
 
   const W = 495;
   const BLACK = '#0A0A0A', GRAY = '#888888', LIGHT = '#F7F7F7', LIME = '#B9FF00';

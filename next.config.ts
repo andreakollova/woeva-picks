@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    '/api/admin-invoice': ['./node_modules/pdfkit/js/data/**/*'],
-    '/api/admin-invoice-bulk': ['./node_modules/pdfkit/js/data/**/*'],
+    '/api/admin-invoice': ['./pass-assets/**/*'],
+    '/api/admin-invoice-bulk': ['./pass-assets/**/*'],
   },
 };
 
